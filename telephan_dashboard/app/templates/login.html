@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="center">
+  <div class="glass login">
+    <div class="title">TELEFAN</div>
+
+    <p class="help" style="margin:14px 6px 0 6px;">
+      Accès sécurisé au tableau de bord. Saisissez vos identifiants pour continuer.
+    </p>
+
+    <form class="form" method="post" novalidate>
+      {{ form.hidden_tag() }}
+
+      <div>
+        <div class="label" style="margin:0 0 6px 6px;">Identifiant</div>
+        {{ form.username(class_="input", autocomplete="username", placeholder="ex : okan.minusker") }}
+      </div>
+
+      <div>
+        <div class="label" style="margin:0 0 6px 6px;">Mot de passe</div>
+        {{ form.password(class_="input", autocomplete="current-password", placeholder="••••••••") }}
+      </div>
+
+      <button class="btn btn-primary" type="submit" style="width:100%; height:52px;">
+        Se connecter
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

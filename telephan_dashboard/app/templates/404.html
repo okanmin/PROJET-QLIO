@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h1>404</h1>
+  <p>La page demandée n'existe pas.</p>
+  <a class="btn" href="{{ url_for('auth.home') }}">Retour accueil</a>
+</div>
+{% endblock %}

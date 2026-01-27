@@ -1,0 +1,16 @@
+Coucou Tommy :)
+Y'a toute la base de l'architecture du projet, pour l'instant l'application ressemble pas à grand chose et les boutons ne sont pas intéractifs c'est normal je me suis pas plus attardé que ça sur le visuel mais j'irais m'inspirer du projet en D3js avec Ouzrout !
+
+J'te fais un petit mode d'emploi pour lancer l'app !
+
+Tu vas faire un petit "Open folder" sur VSCode pour te placer à dans le dossier telephan_dashboard puis avec le terminal tu vas lancer les commandes suivantes :
+
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+
+pip install -r requirements.txt
+python run.py
+
+Puis ensuite tu vas sur "http://127.0.0.1:5000/login"
+
+Aller je retourne bosser sur ma soutenance pour lundi je rattraperais ma dette sur le projet les weekends ou en entreprise bhahahaha

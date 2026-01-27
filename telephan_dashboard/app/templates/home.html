@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="page glass">
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">
+        <h2>Taux rebut</h2>
+        <span class="badge bad">À surveiller</span>
+      </div>
+      <div class="kpi">4,2%</div>
+      <div class="kpi-sub">Sur la période sélectionnée</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <h2>Typologie défauts</h2>
+        <span class="badge">Histogramme</span>
+      </div>
+      <div class="kpi-sub">Zone graphique (à brancher)</div>
+      <div style="height:160px; border-radius:16px; border:1px dashed rgba(255,255,255,.25);"></div>
+    </div>
+  </div>
+
+  <div style="height:16px"></div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">
+        <h2>Succès robot</h2>
+        <span class="badge good">OK</span>
+      </div>
+      <div style="height:180px; border-radius:16px; border:1px dashed rgba(255,255,255,.25);"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <h2>Taux micro-arrêts</h2>
+        <span class="badge">Courbe</span>
+      </div>
+      <div style="height:180px; border-radius:16px; border:1px dashed rgba(255,255,255,.25);"></div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
