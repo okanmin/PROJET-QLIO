@@ -38,7 +38,7 @@ L'infrastructure est entièrement conteneurisée pour garantir la stabilité de 
 * **Backend** : Python 3.11 avec Flask et SQLAlchemy.
 * **Base de Données** : MariaDB (Schéma principal : `MES4_Analysis`).
 * **Design** : Interface moderne en **Glassmorphism** (fond sombre, cartes avec flou de transparence) gérée via `style.css`.
-* **Outils** : phpMyAdmin intégré pour la gestion SQL (accessible sur le port `8080`).
+* **Outils** : phpMyAdmin intégré pour la gestion SQL http://localhost:8080
 
 ## 📁 Structure du Code Source
 
@@ -52,4 +52,5 @@ telephan_dashboard/
 ├── scripts_sql/         # Scripts d'initialisation de la BDD MariaDB
 ├── Dockerfile           # Configuration de l'image Web
 └── docker-compose.yml   # Orchestration des conteneurs
+
 
