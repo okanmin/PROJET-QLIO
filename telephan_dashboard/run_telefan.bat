@@ -3,7 +3,7 @@ title Lancement TELEFAN Dashboard
 echo [1/2] Demarrage des conteneurs Docker...
 
 :: Lance docker-compose en arriere-plan
-docker-compose up -d
+docker-compose up -d --build
 
 echo Attente du demarrage des services...
 timeout /t 5 /nobreak > nul

@@ -7,7 +7,7 @@ definer_user=root
 definer_host=localhost
 suid=2
 with_check_option=0
-timestamp=0001769778318951857
+timestamp=0001769793204685979
 create-version=2
 source=SELECT \n    o.ONo AS Num_Commande,\n    \n    \n    DATE(o.End) AS Date_Fin_Commande,\n    DATE_FORMAT(o.End, \'%Y-%m\') AS Mois,\n    \n    \n    \n    TIMESTAMPDIFF(SECOND, o.Start, o.End) AS Lead_Time_Total_Sec,\n    ROUND(TIMESTAMPDIFF(SECOND, o.Start, o.End) / 60, 1) AS Lead_Time_Total_Min,\n\n    \n    \n    \n    IFNULL(SUM(TIMESTAMPDIFF(SECOND, fp.Start, fp.End)), 0) AS Temps_Process_Sec,\n    \n    \n    \n    \n    CASE \n        WHEN (TIMESTAMPDIFF(SECOND, o.Start, o.End) - IFNULL(SUM(TIMESTAMPDIFF(SECOND, fp.Start, fp.End)), 0)) < 0 THEN 0\n        ELSE (TIMESTAMPDIFF(SECOND, o.Start, o.End) - IFNULL(SUM(TIMESTAMPDIFF(SECOND, fp.Start, fp.End)), 0))\n    END AS Temps_Attente_Sec\n\nFROM \n    `mes4`.`tblorder` o\n\nLEFT JOIN \n    `mes4`.`tblfinorderpos` fp ON o.ONo = fp.ONo\n\nWHERE \n    o.Start IS NOT NULL \n    AND o.End IS NOT NULL\n    \n    \n\nGROUP BY \n    o.ONo
 client_cs_name=utf8mb3

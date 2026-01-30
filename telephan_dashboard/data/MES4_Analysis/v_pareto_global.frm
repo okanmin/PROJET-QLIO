@@ -7,7 +7,7 @@ definer_user=root
 definer_host=localhost
 suid=2
 with_check_option=0
-timestamp=0001769778318682138
+timestamp=0001769793204529280
 create-version=2
 source=SELECT \n    Categorie,\n    Quantite,\n    \n    \n    SUM(Quantite) OVER (ORDER BY Quantite DESC) AS Cumul_Quantite,\n    \n    \n    SUM(Quantite) OVER () AS Total_General,\n    \n    \n    ROUND(\n        (SUM(Quantite) OVER (ORDER BY Quantite DESC) / SUM(Quantite) OVER ()) * 100, \n        2\n    ) AS Pourcentage_Courbe\n\nFROM (\n    \n    SELECT \n        CASE \n            WHEN fp.Error = 0 THEN \'Opération Conforme (OK)\'\n            ELSE e.Description\n        END AS Categorie,\n        COUNT(*) AS Quantite\n    FROM \n        `mes4`.`tblfinorderpos` fp\n    LEFT JOIN \n        `mes4`.`tblerrorcodes` e ON fp.Error = e.ErrorId\n    GROUP BY \n        CASE \n            WHEN fp.Error = 0 THEN \'Opération Conforme (OK)\'\n            ELSE e.Description\n        END\n    \n) AS Sous_Requete\n\nORDER BY \n    Quantite DESC
 client_cs_name=utf8mb3

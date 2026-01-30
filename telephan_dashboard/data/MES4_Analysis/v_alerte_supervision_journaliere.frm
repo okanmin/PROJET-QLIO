@@ -7,7 +7,7 @@ definer_user=root
 definer_host=localhost
 suid=2
 with_check_option=0
-timestamp=0001769778318798173
+timestamp=0001769793204583948
 create-version=2
 source=SELECT \n    sub.Date_Jour,\n    sub.Machine,\n    \n    \n    COUNT(*) AS Nb_Micro_Arrets,\n    \n    \n    ROUND(SUM(sub.Duree_Arret_Sec)/60, 1) AS Minutes_Perdues,\n    \n    \n    CASE \n        WHEN COUNT(*) >= 15 THEN \'CRITIQUE 🔴\'\n        WHEN COUNT(*) >= 5 THEN \'ATTENTION 🟠\'\n        ELSE \'NORMAL 🟢\'\n    END AS Niveau_Alerte,\n    \n    \n    CASE \n        WHEN COUNT(*) >= 15 THEN 3\n        WHEN COUNT(*) >= 5 THEN 2\n        ELSE 1\n    END AS Code_Couleur\n\nFROM (\n    \n    SELECT \n        DATE(fp.Start) AS Date_Jour, \n        op.Description AS Machine,\n        TIMESTAMPDIFF(SECOND, \n            LAG(fp.End) OVER (PARTITION BY fp.OpNo ORDER BY fp.Start), \n            fp.Start\n        ) AS Duree_Arret_Sec\n    FROM \n        `mes4`.`tblfinorderpos` fp\n    JOIN \n        `mes4`.`tbloperation` op ON fp.OpNo = op.OpNo\n    WHERE \n        fp.Start IS NOT NULL AND fp.End IS NOT NULL\n) AS sub\n\nWHERE \n    sub.Duree_Arret_Sec > 0 AND sub.Duree_Arret_Sec < 300 \n\n\nGROUP BY \n    sub.Date_Jour, \n    sub.Machine\n\nORDER BY \n    sub.Date_Jour DESC, \n    Nb_Micro_Arrets DESC
 client_cs_name=utf8mb3

@@ -7,7 +7,7 @@ definer_user=root
 definer_host=localhost
 suid=2
 with_check_option=0
-timestamp=0001769778319019291
+timestamp=0001769793204747742
 create-version=2
 source=SELECT \n    bp.PNo AS Reference_Article,\n    \n    \n    COUNT(bp.PNo) AS Stock_Actuel,\n    \n    \n    (SELECT COUNT(*) \n     FROM `mes4`.`tblfinorderpos` fp \n     WHERE fp.PNo = bp.PNo \n       AND fp.End >= DATE_SUB(NOW(), INTERVAL 30 DAY)\n       AND fp.Error = 0\n    ) AS Conso_Mois,\n    \n    \n    ROUND(\n        (COUNT(bp.PNo) * 30) \n        / \n        NULLIF((SELECT COUNT(*) FROM `mes4`.`tblfinorderpos` fp WHERE fp.PNo = bp.PNo AND fp.End >= DATE_SUB(NOW(), INTERVAL 30 DAY)), 0)\n    , 1) AS Jours_Couverture\n\nFROM \n    `mes4`.`tblbufferpos` bp\nWHERE \n    bp.PNo > 0\nGROUP BY \n    bp.PNo\nORDER BY \n    Jours_Couverture DESC
 client_cs_name=utf8mb3

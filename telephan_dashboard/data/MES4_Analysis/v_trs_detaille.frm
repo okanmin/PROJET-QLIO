@@ -7,7 +7,7 @@ definer_user=root
 definer_host=localhost
 suid=2
 with_check_option=0
-timestamp=0001769778318886412
+timestamp=0001769793204630277
 create-version=2
 source=SELECT \n    \n    \n    \n    ROUND(\n        SUM(TIMESTAMPDIFF(SECOND, fp.Start, fp.End)) \n        / \n        NULLIF(SUM(TIMESTAMPDIFF(SECOND, fp.PlannedStart, fp.PlannedEnd)), 0) * 100\n    , 2) AS Taux_Disponibilite,\n\n    \n    \n    \n    ROUND(\n        SUM(IFNULL(ro.WorkingTime, 0)) \n        / \n        NULLIF(SUM(TIMESTAMPDIFF(SECOND, fp.Start, fp.End)), 0) * 100\n    , 2) AS Taux_Performance,\n\n    \n    \n    ROUND(\n        SUM(CASE WHEN fp.Error = 0 THEN 1 ELSE 0 END) \n        / \n        COUNT(*) * 100\n    , 2) AS Taux_Qualite,\n\n    \n    \n    ROUND(\n        (\n            (SUM(TIMESTAMPDIFF(SECOND, fp.Start, fp.End)) / NULLIF(SUM(TIMESTAMPDIFF(SECOND, fp.PlannedStart, fp.PlannedEnd)), 0))\n            *\n            (SUM(IFNULL(ro.WorkingTime, 0)) / NULLIF(SUM(TIMESTAMPDIFF(SECOND, fp.Start, fp.End)), 0))\n            *\n            (SUM(CASE WHEN fp.Error = 0 THEN 1 ELSE 0 END) / COUNT(*))\n        ) * 100\n    , 2) AS TRS_Final_Pourcentage\n\nFROM \n    `mes4`.`tblfinorderpos` fp\nLEFT JOIN \n    `mes4`.`tblresourceoperation` ro ON fp.OpNo = ro.OpNo AND fp.ResourceID = ro.ResourceID\nWHERE \n    fp.Start IS NOT NULL \n    AND fp.End IS NOT NULL \n    AND fp.PlannedStart IS NOT NULL \n    AND fp.PlannedEnd IS NOT NULL
 client_cs_name=utf8mb3

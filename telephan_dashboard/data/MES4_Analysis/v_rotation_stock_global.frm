@@ -7,7 +7,7 @@ definer_user=root
 definer_host=localhost
 suid=2
 with_check_option=0
-timestamp=0001769778318981274
+timestamp=0001769793204715983
 create-version=2
 source=WITH Stock_Actuel AS (\n    \n    SELECT COUNT(*) AS Qte_Stock_Totale\n    FROM `mes4`.`tblbufferpos`\n    WHERE PNo > 0 \n),\nConsommation_30J AS (\n    \n    SELECT COUNT(*) AS Qte_Conso_Mois\n    FROM `mes4`.`tblfinorderpos`\n    WHERE End >= DATE_SUB(NOW(), INTERVAL 30 DAY)\n      AND Error = 0 \n)\nSELECT \n    s.Qte_Stock_Totale,\n    c.Qte_Conso_Mois,\n    \n    \n    CASE \n        WHEN c.Qte_Conso_Mois = 0 THEN 999 \n        ELSE ROUND((s.Qte_Stock_Totale * 30) / c.Qte_Conso_Mois, 1)\n    END AS Rotation_Stock_Jours,\n    \n    \n    CASE \n        WHEN c.Qte_Conso_Mois = 0 THEN \'Stock Dormant (Alerte)\'\n        WHEN (s.Qte_Stock_Totale * 30) / c.Qte_Conso_Mois < 5 THEN \'Stock Critique (< 5j)\'\n        WHEN (s.Qte_Stock_Totale * 30) / c.Qte_Conso_Mois > 45 THEN \'Sur-Stockage (> 45j)\'\n        ELSE \'Stock Sain\'\n    END AS Etat_Stock\n\nFROM Stock_Actuel s\nCROSS JOIN Consommation_30J c
 client_cs_name=utf8mb3

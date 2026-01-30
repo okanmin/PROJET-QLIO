@@ -7,7 +7,7 @@ definer_user=root
 definer_host=localhost
 suid=2
 with_check_option=0
-timestamp=0001769778318742322
+timestamp=0001769793204555244
 create-version=2
 source=SELECT \n    op.Description AS Machine,\n    \n    \n    ROUND(SUM(TIMESTAMPDIFF(SECOND, fp.Start, fp.End)) / 3600, 2) AS Heures_Fonctionnement,\n    \n    \n    \n    SUM(\n        TIMESTAMPDIFF(SECOND, fp.Start, fp.End) * IFNULL(ro.ElectricEnergy, 0)\n    ) AS Conso_Elec_Totale,\n    \n    \n    \n    SUM(\n        TIMESTAMPDIFF(SECOND, fp.Start, fp.End) * IFNULL(ro.CompressedAir, 0)\n    ) AS Conso_Air_Total\n\nFROM \n    `mes4`.`tblfinorderpos` fp\nJOIN \n    `mes4`.`tbloperation` op ON fp.OpNo = op.OpNo\n\nLEFT JOIN \n    `mes4`.`tblresourceoperation` ro ON fp.OpNo = ro.OpNo AND fp.ResourceID = ro.ResourceID\n\nWHERE \n    fp.Start IS NOT NULL AND fp.End IS NOT NULL\nGROUP BY \n    op.Description\nORDER BY \n    Conso_Elec_Totale DESC
 client_cs_name=utf8mb3
