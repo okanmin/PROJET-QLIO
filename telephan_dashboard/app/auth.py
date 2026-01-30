@@ -7,9 +7,8 @@ from wtforms import StringField, PasswordField
 from wtforms.validators import DataRequired
 import bcrypt
 from sqlalchemy import text
-
-# IMPORT DE L'INSTANCE DB RÉELLE DEPUIS VOTRE APP
 from . import db
+
 
 # Initialisation du Blueprint
 auth_bp = Blueprint("auth", __name__)

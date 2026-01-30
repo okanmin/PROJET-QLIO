@@ -80,5 +80,13 @@
     </div>
   </div>
 </div>
+<script>
+  // Si le message d'erreur est présent, on rafraîchit la page après 5 secondes
+  if (document.body.innerText.includes("Erreur lors de la récupération des données SQL")) {
+    setTimeout(function() {
+      window.location.reload();
+    }, 5000);
+  }
+</script>
 
 {% endblock %}
