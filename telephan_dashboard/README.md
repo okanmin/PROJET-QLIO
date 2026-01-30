@@ -2,6 +2,23 @@
 
 **TELEFAN** est une application de tableau de bord industriel développée avec **Flask** et **MariaDB**. Elle permet de visualiser en temps réel les indicateurs de performance (KPI) et les consommations énergétiques d'un parc de machines. 🚀
 
+---
+
+## ⚙️ Installation et Lancement
+
+Pour faire fonctionner l'application sur votre poste, suivez ces étapes chronologiques :
+
+### 1. Récupérer le projet (Git)
+Ouvrez un terminal (PowerShell ou Bash) et exécutez les commandes suivantes pour cloner le dépôt et accéder au dossier du projet :
+
+```bash
+# Cloner le dépôt complet
+git clone [https://github.com/okanmin/PROJET-QLIO.git](https://github.com/okanmin/PROJET-QLIO.git)
+
+# Se déplacer dans le dossier du dashboard
+cd PROJET-QLIO/telephan_dashboard
+```
+
 ## 🚀 Guide de Lancement Rapide
 
 Pour faire fonctionner l'application sur votre poste, suivez ces deux étapes :
@@ -35,3 +52,4 @@ telephan_dashboard/
 ├── scripts_sql/         # Scripts d'initialisation de la BDD MariaDB
 ├── Dockerfile           # Configuration de l'image Web
 └── docker-compose.yml   # Orchestration des conteneurs
+
