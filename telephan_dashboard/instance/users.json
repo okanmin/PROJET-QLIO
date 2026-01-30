@@ -2,5 +2,9 @@
   "admin": {
     "password_hash": "$2b$12$hbPNIdOP1T2bYOSeH5tTKOo833SfkKaPgaSkIkqgaAW3HRf0EjKDW",
     "role": "admin"
+  },
+  "trahita": {
+    "password_hash": "$2b$12$Pvxpfi7BWdE9Wfjk9qZdbe/0uR9E6Cd2366AJlNMYdp6H.GQfl6X2",
+    "role": "admin"
   }
 }
