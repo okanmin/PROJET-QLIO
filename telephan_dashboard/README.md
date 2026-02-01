@@ -8,14 +8,19 @@
 
 Pour faire fonctionner l'application sur votre poste, suivez ces étapes chronologiques :
 
-### 1. Récupérer le projet (Git)
-Ouvrez un terminal (PowerShell ou Bash) et exécutez les commandes suivantes pour cloner le dépôt et accéder au dossier du projet :
+Pour faire fonctionner l'application sur votre poste, vous disposez de deux méthodes au choix.
 
+### Méthode A : Installation Standard (Sans ligne de commande)
+1. **Téléchargement** : Cliquez sur [ce lien](https://github.com/okanmin/PROJET-QLIO/archive/refs/heads/main.zip) pour télécharger le projet en format ZIP.
+2. **Emplacement** : Choisissez votre dossier de destination via l'interface Windows et extrayez l'archive.
+3. **Lancement** : Suivez le "Guide de Lancement Rapide" ci-dessous.
+
+### Méthode B : Installation Développeur (Git)
 ```bash
 # Cloner le dépôt complet
 git clone [https://github.com/okanmin/PROJET-QLIO.git](https://github.com/okanmin/PROJET-QLIO.git)
 
-# Se déplacer dans le dossier du dashboard
+# Se déplacer dans le dossier du projet
 cd PROJET-QLIO/telephan_dashboard
 ```
 
