@@ -260,3 +260,53 @@ body{
   .topbar{ flex-wrap: wrap; }
   .topbar .segment{ flex: 1 1 220px; }
 }
+
+:root {
+    --accent: #00d4ff;   /* Bleu cyan pour les barres Pareto */
+    --good: #00ffa3;     /* Vert pour le succès */
+    --bad: #ff4b5c;      /* Rouge pour les alertes */
+    --stroke: rgba(255, 255, 255, 0.1);
+}
+/* Conteneur du Pareto */
+.pareto-list {
+    margin-top: 15px;
+}
+
+.pareto-item {
+    margin-bottom: 12px;
+}
+
+.pareto-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: white;
+    margin-bottom: 4px;
+}
+
+.pareto-qty {
+    font-weight: bold;
+    color: var(--accent);
+}
+
+/* Structure de la barre de progression */
+.progress-bg {
+    width: 100%;
+    height: 8px;
+    background: var(--stroke);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--accent);
+    transition: width 1s ease-in-out;
+}
+
+.pareto-impact {
+    font-size: 10px;
+    color: var(--muted);
+    display: block;
+    margin-top: 2px;
+}

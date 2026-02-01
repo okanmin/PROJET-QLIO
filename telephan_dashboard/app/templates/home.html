@@ -1,92 +1,54 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="page glass">
-  <div class="grid-2">
-    <div class="card">
-      <div class="card-title">
-        <h2>Taux rebut</h2>
-        <span class="badge bad">À surveiller</span>
-      </div>
-      <div class="kpi">4,2%</div>
-      <div class="kpi-sub">Sur la période sélectionnée</div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">
-        <h2>Typologie défauts</h2>
-        <span class="badge">Histogramme</span>
-      </div>
-      <div class="kpi-sub">Zone graphique (à brancher)</div>
-      <div style="height:160px; border-radius:16px; border:1px dashed rgba(255,255,255,.25);"></div>
-    </div>
-  </div>
-
-  <div style="height:16px"></div>
-
+<div class="page glass presentation-page">
   <div class="card">
     <div class="card-title">
-      <h2>Consommation Énergétique Réelle</h2>
-      <span class="badge good">Live MariaDB</span>
+      <h2>Bienvenue sur le Dashboard TELEFAN</h2>
+      <span class="badge good">Système Actif</span>
     </div>
-    <div style="overflow-x: auto; margin-top: 15px;">
-      <table style="width:100%; border-collapse: collapse; color: white; font-size: 14px;">
-        <thead>
-          <tr style="border-bottom: 1px solid var(--stroke); text-align: left;">
-            <th style="padding: 12px;">Machine</th>
-            <th style="padding: 12px;">Heures Fonctionnement</th>
-            <th style="padding: 12px;">Conso Élec (kWh)</th>
-            <th style="padding: 12px;">Conso Air (L)</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in energy_data %}
-          <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-            <td style="padding: 10px;">{{ row[0] }}</td>
-            <td style="padding: 10px; font-weight: bold; color: var(--good);">{{ row[1] }} h</td>
-            <td style="padding: 10px; color: var(--accent);">{{ row[2] }}</td>
-            <td style="padding: 10px; color: var(--accent);">{{ row[3] }}</td>
-          </tr>
-          {% else %}
-          <tr>
-            <td colspan="4" style="padding: 40px; text-align: center; color: var(--muted);">
-              <div style="font-size: 16px; margin-bottom: 8px;">Aucune donnée SQL disponible</div>
-              <small>Vérifiez la vue <code>MES4_Analysis.v_conso_energetique_reelle</code></small>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
+    
+    <div class="presentation-content" style="margin-top: 20px; color: white; line-height: 1.6;">
+      <p>
+        Ce tableau de bord est un outil de pilotage en temps réel conçu pour superviser les performances de la ligne de production. 
+        Il permet d'agréger les données provenant des automates pour offrir une visibilité claire sur trois axes majeurs :
+      </p>
 
-  <div style="height:16px"></div>
+      <div class="grid-2" style="margin-top: 30px; gap: 20px;">
+        <div class="info-box" style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid var(--stroke);">
+          <h3 style="color: var(--good); margin-bottom: 10px;">🛡️ Qualité</h3>
+          <p style="font-size: 14px;">
+            Suivi du taux de succès des opérations robotiques et analyse Pareto des causes d'échec pour réduire les rebuts.
+          </p>
+        </div>
 
-  <div class="grid-2">
-    <div class="card">
-      <div class="card-title">
-        <h2>Succès robot</h2>
-        <span class="badge good">OK</span>
+        <div class="info-box" style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid var(--stroke);">
+          <h3 style="color: var(--accent); margin-bottom: 10px;">⚡ Performance</h3>
+          <p style="font-size: 14px;">
+            Surveillance de la consommation énergétique (Électricité et Air) pour optimiser les coûts de fonctionnement par machine.
+          </p>
+        </div>
+
+        <div class="info-box" style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid var(--stroke);">
+          <h3 style="color: #ffcc00; margin-bottom: 10px;">📦 Logistique</h3>
+          <p style="font-size: 14px;">
+            Gestion des flux et suivi des missions du Robotino pour assurer l'approvisionnement continu des postes.
+          </p>
+        </div>
+
+        <div class="info-box" style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid var(--stroke);">
+          <h3 style="color: var(--muted); margin-bottom: 10px;">📈 Aide à la décision</h3>
+          <p style="font-size: 14px;">
+            Génération de rapports PDF et indicateurs de rotation de stock pour faciliter le management visuel.
+          </p>
+        </div>
       </div>
-      <div style="height:180px; border-radius:16px; border:1px dashed rgba(255,255,255,.25);"></div>
-    </div>
 
-    <div class="card">
-      <div class="card-title">
-        <h2>Taux micro-arrêts</h2>
-        <span class="badge">Courbe</span>
-      </div>
-      <div style="height:180px; border-radius:16px; border:1px dashed rgba(255,255,255,.25);"></div>
+      <p style="margin-top: 30px; text-align: center; color: var(--muted);">
+        <i>Utilisez le menu <b>"Services"</b> en haut à droite pour accéder aux indicateurs détaillés.</i>
+      </p>
     </div>
   </div>
 </div>
-<script>
-  // Si le message d'erreur est présent, on rafraîchit la page après 5 secondes
-  if (document.body.innerText.includes("Erreur lors de la récupération des données SQL")) {
-    setTimeout(function() {
-      window.location.reload();
-    }, 5000);
-  }
-</script>
 
 {% endblock %}

@@ -82,20 +82,69 @@ def logout():
     session.clear()
     return redirect(url_for("auth.login"))
 
+# --- Nouvelles Routes par métier ---
+
+# --- Routes par Services ---
+
+# --- Routes par Services (Filtres opérationnels) ---
+
 @auth_bp.get("/home")
 @login_required
 def home():
-    data = []
+    """Page d'accueil : Présentation du projet"""
+    return render_template("home.html", user=session["user"])
+
+@auth_bp.get("/qualite")
+@login_required
+def qualite_page():
+    """Page Qualité : Diagramme de Pareto complet"""
+    success_kpi = {"taux": 0, "nb": 0, "total": 0}
+    pareto_data = []
+    
+    try:
+        # Récupération de toutes les lignes (OK + KO) classées par quantité décroissante
+        query = text("""
+            SELECT Categorie, Quantite, Pourcentage_Courbe, Total_General 
+            FROM MES4_Analysis.V_Pareto_Global
+        """)
+        results = db.session.execute(query).fetchall()
+        
+        if results:
+            pareto_data = results
+            # Calcul du KPI pour la carte de score
+            for row in results:
+                if row[0] == 'Opération Conforme (OK)':
+                    success_kpi = {
+                        "nb": row[1],
+                        "total": row[3],
+                        "taux": round((row[1] / row[3]) * 100, 1) if row[3] > 0 else 0
+                    }
+                    break
+    except Exception as e:
+        print(f"Erreur SQL Qualité : {e}")
+
+    return render_template("qualite.html", 
+                           user=session["user"], 
+                           success_kpi=success_kpi, 
+                           pareto_data=pareto_data)
+
+@auth_bp.get("/performance")
+@login_required
+def performance_page():
+    """Page Performance : Consommation énergétique"""
+    energy_data = []
     try:
         query = text("SELECT * FROM MES4_Analysis.v_conso_energetique_reelle LIMIT 10")
-        result = db.session.execute(query)
-        data = result.fetchall()
+        energy_data = db.session.execute(query).fetchall()
     except Exception as e:
-        data = []
-        print(f"Erreur connexion MariaDB : {e}")
-        flash("Erreur lors de la récupération des données SQL.", "error")
+        print(f"Erreur SQL Performance : {e}")
+    return render_template("performance.html", user=session["user"], energy_data=energy_data)
 
-    return render_template("home.html", user=session["user"], energy_data=data)
+@auth_bp.get("/robotino")
+@login_required
+def robotino_page():
+    """Page Robotino : Suivi logistique"""
+    return render_template("robotino.html", user=session["user"])
 
 @auth_bp.get("/admin")
 @login_required
