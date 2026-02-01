@@ -29,7 +29,7 @@ cd PROJET-QLIO/telephan_dashboard
 Pour faire fonctionner l'application sur votre poste, suivez ces deux étapes :
 
 1.  **Démarrer Docker** : Ouvrez l'application **Docker Desktop** et assurez-vous que le moteur est bien en cours d'exécution.
-2.  **Lancer l'automatisation** : Double-cliquez sur le fichier `run_telefan.bat` à la racine du projet.
+2.  **Lancer l'automatisation** : Double-cliquez sur le fichier `run_telephan.bat` à la racine du projet.
     * *Ce script se charge de construire les images et de monter les conteneurs automatiquement via Docker Compose.*
 
 L'application sera ensuite accessible à l'adresse suivante : [http://localhost:5000](http://localhost:5000)
@@ -57,5 +57,6 @@ telephan_dashboard/
 ├── scripts_sql/         # Scripts d'initialisation de la BDD MariaDB
 ├── Dockerfile           # Configuration de l'image Web
 └── docker-compose.yml   # Orchestration des conteneurs
+
 
 
