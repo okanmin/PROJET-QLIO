@@ -70,11 +70,12 @@ def home():
 @auth_bp.get("/qualite")
 @login_required
 def qualite_page():
-    """Page Qualité : Pareto et Taux de panne"""
+    """Page Qualité : Pareto, Taux de panne et Énergie"""
     success_kpi = {"taux": 0, "nb": 0, "total": 0}
     pareto_data_formatted = []
-    energy_data_formatted = []
+    energy_data_formatted = [] # <--- CETTE VARIABLE MANQUAIT SUREMENT
     taux_panne = 0
+    couleur_panne = "var(--good)"
 
     try:
         # 1. Pareto et KPI de succès
@@ -91,7 +92,6 @@ def qualite_page():
                 quantite = int(row[1] or 0)
                 total_gen = int(row[3] or 0)
                 pct_indiv = float((quantite / total_gen * 100)) if total_gen > 0 else 0.0
-                
                 is_ok = "OK" in categorie.upper() or "CONFORME" in categorie.upper()
                 
                 if is_ok:
@@ -105,27 +105,35 @@ def qualite_page():
                     "is_ok": is_ok
                 })
 
-        # 2. Taux d'arrêt (Dernière valeur de la vue)
+        # 2. Taux d'arrêt (Chiffre Spot)
         query_panne = text("SELECT Taux_Arret_Panne_Pourcentage FROM MES4_Analysis.V_Taux_Panne_Par_Jour LIMIT 1")
         res_panne = db.session.execute(query_panne).fetchone()
         if res_panne:
             taux_panne = float(res_panne[0] or 0.0)
+            if taux_panne >= 50: couleur_panne = "var(--bad)"
+            elif taux_panne >= 20: couleur_panne = "#ff9f43"
 
-        # 3. Énergie
+        # 3. Énergie (C'est cette partie qui corrige votre erreur 500)
         query_energy = text("SELECT Machine, Conso_Elec_Totale, Conso_Air_Total FROM MES4_Analysis.V_Conso_Energetique_Reelle")
         res_energy = db.session.execute(query_energy).fetchall()
         for r in res_energy:
-            energy_data_formatted.append({"machine": r[0], "elec": float(r[1]), "air": float(r[2])})
+            energy_data_formatted.append({
+                "machine": str(r[0]), 
+                "elec": float(r[1] or 0), 
+                "air": float(r[2] or 0)
+            })
 
     except Exception as e:
         print(f"Erreur SQL Qualité : {e}")
 
+    # ATTENTION : energy_data=energy_data_formatted doit être présent ici !
     return render_template("qualite.html", 
                            user=session["user"], 
                            success_kpi=success_kpi, 
                            pareto_data=pareto_data_formatted,
                            taux_panne=taux_panne,
-                           energy_data=energy_data_formatted)
+                           couleur_panne=couleur_panne,
+                           energy_data=energy_data_formatted) # <--- CRUCIAL
 
 @auth_bp.get("/performance")
 @login_required

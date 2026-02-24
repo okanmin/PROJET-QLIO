@@ -10,14 +10,27 @@
     </div>
 
     <div class="grid-3" style="margin-bottom: 24px;">
-        <div class="card" style="text-align: center; border-bottom: 4px solid var(--bad); grid-column: span 3;">
-            <div class="card-title"><h2 style="justify-content: center;">Taux d'arrêt pour pannes (Aujourd'hui)</h2></div>
-            <div class="kpi" style="color: var(--bad); font-size: 4rem; line-height: 1;">{{ taux_panne }} %</div>
-            <div class="kpi-sub">Ratio : Temps de panne / Temps d'ouverture total</div>
-            <div class="progress-bg" style="height: 12px; margin-top: 20px; border-radius: 6px;">
-                <div class="progress-fill" style="width: {{ taux_panne }}%; background: var(--bad);"></div>
-            </div>
+        <div class="card" style="text-align: center; border-bottom: 4px solid {{ couleur_panne }}; grid-column: span 3;">
+        <div class="card-title"><h2 style="justify-content: center;">Statut du Taux d'Arrêt (Pannes)</h2></div>
+        
+        <div class="kpi" style="color: {{ couleur_panne }}; font-size: 4.5rem; font-weight: bold; margin: 10px 0;">
+            {{ taux_panne }} %
         </div>
+        
+        <p style="color: #a0a0a0; margin-bottom: 15px;">
+            {% if taux_panne >= 50 %}
+                CRITIQUE : Seuil d'alerte dépassé (>50%)
+            {% elif taux_panne >= 20 %}
+                ATTENTION : Maintenance préventive à prévoir (>20%)
+            {% else %}
+                OPTIMAL : La ligne fonctionne correctement
+            {% endif %}
+        </p>
+        
+        <div style="width: 100%; background: rgba(255,255,255,0.1); height: 12px; border-radius: 6px; overflow: hidden;">
+            <div style="width: {{ taux_panne }}%; background: {{ couleur_panne }}; height: 100%; transition: width 0.8s ease-in-out;"></div>
+        </div>
+    </div>
     </div>
 
     <div class="card" style="margin-bottom: 24px;">
