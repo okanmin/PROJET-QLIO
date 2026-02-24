@@ -6,91 +6,79 @@
 <div class="page container">
 
     <div class="card-title" style="margin-bottom: 20px;">
-        <h2 style="font-size: 20px;">Diagramme de Pareto - Analyse Globale</h2>
+        <h2 style="font-size: 20px;">Tableau de Bord Qualité & Maintenance</h2>
     </div>
 
-    <div class="card">
-        <div style="position: relative; height: 500px; width: 100%;">
+    <div class="grid-3" style="margin-bottom: 24px;">
+        <div class="card" style="text-align: center; border-bottom: 4px solid var(--bad); grid-column: span 3;">
+            <div class="card-title"><h2 style="justify-content: center;">Taux d'arrêt pour pannes (Aujourd'hui)</h2></div>
+            <div class="kpi" style="color: var(--bad); font-size: 4rem; line-height: 1;">{{ taux_panne }} %</div>
+            <div class="kpi-sub">Ratio : Temps de panne / Temps d'ouverture total</div>
+            <div class="progress-bg" style="height: 12px; margin-top: 20px; border-radius: 6px;">
+                <div class="progress-fill" style="width: {{ taux_panne }}%; background: var(--bad);"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" style="margin-bottom: 24px;">
+        <div class="card-title"><h2>Diagramme de Pareto (Analyse des Erreurs)</h2></div>
+        <div style="position: relative; height: 450px; width: 100%;">
             <canvas id="paretoChart"></canvas>
+        </div>
+    </div>
+
+    <div class="grid-2" style="gap: 20px;">
+        <div class="card">
+            <div class="card-title"><h2>Consommation Électrique (W)</h2></div>
+            <div style="height: 300px;"><canvas id="elecChart"></canvas></div>
+        </div>
+        <div class="card">
+            <div class="card-title"><h2>Consommation Air (L/min)</h2></div>
+            <div style="height: 300px;"><canvas id="airChart"></canvas></div>
         </div>
     </div>
 
 </div>
 
 <script>
-    // 1. Récupération des couleurs de votre CSS pour les barres
-    const rootStyles = getComputedStyle(document.documentElement);
-    const colorGood = rootStyles.getPropertyValue('--good').trim() || '#2ee59d';
-    const colorBad = rootStyles.getPropertyValue('--bad').trim() || '#ff4d6d';
-    const colorAccent = rootStyles.getPropertyValue('--accent').trim() || '#00d4ff';
-    const colorWhite = '#ffffff'; // On force le blanc pur pour le texte
+    const colorWhite = '#ffffff';
+    const colorGood = '#2ee59d';
+    const colorBad = '#ff4d6d';
+    const colorAccent = '#00d4ff';
 
-    // 2. Transfert sécurisé des données depuis Python
-    let dataFromPython = {{ pareto_data | tojson | safe }};
+    // --- PARETO ---
+    const dataP = {{ pareto_data | tojson | safe }};
+    dataP.sort((a, b) => b.pct - a.pct);
     
-    // 3. TRI CLASSIQUE PARETO : Du plus grand au plus petit pourcentage (Descendant)
-    dataFromPython.sort((a, b) => b.pct - a.pct);
-
-    // 4. Extraction des tableaux et recalcul du cumul
-    const labels = [];
-    const percentages = [];
-    const cumulatives = [];
-    const barColors = [];
-    const paretoLine80 = [];
-    
-    let currentCumul = 0;
-
-    dataFromPython.forEach(item => {
-        labels.push(item.label);
-        percentages.push(item.pct);
-        
-        // Recalcul de la courbe cumulative (de gauche à droite)
-        currentCumul += item.pct;
-        cumulatives.push(currentCumul > 100 ? 100 : parseFloat(currentCumul.toFixed(1)));
-        
-        barColors.push(item.is_ok ? colorGood : colorBad);
-        paretoLine80.push(80); // Ligne constante à 80%
-    });
-
-    // 5. Configuration du graphique mixte
-    const ctx = document.getElementById('paretoChart').getContext('2d');
-    new Chart(ctx, {
+    new Chart(document.getElementById('paretoChart'), {
         type: 'bar',
         data: {
-            labels: labels,
+            labels: dataP.map(d => d.label),
             datasets: [
                 {
-                    label: 'Seuil Pareto (80%)',
-                    data: paretoLine80,
-                    type: 'line',
-                    borderColor: 'rgba(255, 255, 255, 0.6)',
-                    borderWidth: 2,
-                    borderDash: [5, 5],
-                    pointRadius: 0,
-                    pointHoverRadius: 0,
-                    fill: false,
-                    yAxisID: 'y1'
-                },
-                {
-                    label: 'Cumul (%)',
-                    data: cumulatives,
+                    label: 'Cumul %',
+                    data: dataP.map(d => d.cumul),
                     type: 'line',
                     borderColor: colorAccent,
-                    backgroundColor: colorAccent,
+                    yAxisID: 'y1',
                     borderWidth: 3,
-                    tension: 0.1,
-                    fill: false,
-                    pointBackgroundColor: colorAccent,
-                    pointRadius: 4,
-                    yAxisID: 'y1'
+                    pointRadius: 4
                 },
                 {
-                    label: 'Proportion (%)',
-                    data: percentages,
-                    type: 'bar',
-                    backgroundColor: barColors,
-                    borderRadius: 4,
-                    yAxisID: 'y'
+                    label: 'Proportion %',
+                    data: dataP.map(d => d.pct),
+                    backgroundColor: dataP.map(d => d.is_ok ? colorGood : colorBad),
+                    yAxisID: 'y',
+                    borderRadius: 5
+                },
+                {
+                    label: 'Seuil 80%',
+                    data: dataP.map(() => 80),
+                    type: 'line',
+                    borderColor: 'rgba(255,255,255,0.4)',
+                    borderDash: [10, 5],
+                    pointRadius: 0,
+                    yAxisID: 'y1'
                 }
             ]
         },
@@ -98,55 +86,37 @@
             responsive: true,
             maintainAspectRatio: false,
             scales: {
-                y: {
-                    type: 'linear',
-                    display: true,
-                    position: 'left',
-                    max: 100,
-                    min: 0,
-                    title: { display: true, text: 'Proportion de la catégorie (%)', color: colorWhite },
-                    ticks: { color: colorWhite },
-                    grid: { color: 'rgba(255, 255, 255, 0.05)' }
-                },
-                y1: {
-                    type: 'linear',
-                    display: true,
-                    position: 'right',
-                    max: 100,
-                    min: 0,
-                    title: { display: true, text: 'Cumul Global (%)', color: colorWhite },
-                    ticks: { color: colorWhite },
-                    grid: { drawOnChartArea: false }
-                },
-                x: {
-                    ticks: { color: colorWhite, maxRotation: 45, minRotation: 0 },
-                    grid: { display: false }
-                }
+                y: { min: 0, max: 100, ticks: { color: colorWhite } },
+                y1: { position: 'right', min: 0, max: 100, ticks: { color: colorWhite }, grid: { drawOnChartArea: false } },
+                x: { ticks: { color: colorWhite } }
             },
             plugins: {
                 legend: { 
                     labels: { 
-                        color: colorWhite, // Force la couleur principale de la légende en blanc
-                        generateLabels: function(chart) {
-                            return [
-                                // L'attribut fontColor assure que même les libellés personnalisés soient blancs
-                                { text: 'Conforme (OK)', fillStyle: colorGood, strokeStyle: colorGood, lineWidth: 0, fontColor: colorWhite },
-                                { text: 'Erreur', fillStyle: colorBad, strokeStyle: colorBad, lineWidth: 0, fontColor: colorWhite },
-                                { text: 'Courbe de Cumul', fillStyle: colorAccent, strokeStyle: colorAccent, lineWidth: 2, fontColor: colorWhite },
-                                { text: 'Seuil 80%', fillStyle: 'transparent', strokeStyle: 'rgba(255, 255, 255, 0.6)', lineDash: [5, 5], lineWidth: 2, fontColor: colorWhite }
-                            ];
-                        }
-                    }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return context.dataset.label + ': ' + context.parsed.y + '%';
-                        }
+                        color: colorWhite,
+                        generateLabels: () => [
+                            { text: 'Conforme', fillStyle: colorGood },
+                            { text: 'Erreur', fillStyle: colorBad },
+                            { text: 'Courbe Cumul', strokeStyle: colorAccent, lineWidth: 2 },
+                            { text: 'Seuil 80%', strokeStyle: 'white', lineDash: [5, 5], lineWidth: 2 }
+                        ]
                     }
                 }
             }
         }
     });
+
+    // --- ENERGIE ---
+    const dataE = {{ energy_data | tojson | safe }};
+    const eLabels = dataE.map(d => d.machine);
+
+    const configLine = (ctx, label, data, color) => new Chart(ctx, {
+        type: 'line',
+        data: { labels: eLabels, datasets: [{ label: label, data: data, borderColor: color, tension: 0.4, fill: true, backgroundColor: color + '22' }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { color: colorWhite } }, x: { ticks: { color: colorWhite } } } }
+    });
+
+    configLine(document.getElementById('elecChart'), 'Elec', dataE.map(d => d.elec), '#f1c40f');
+    configLine(document.getElementById('airChart'), 'Air', dataE.map(d => d.air), colorAccent);
 </script>
 {% endblock %}

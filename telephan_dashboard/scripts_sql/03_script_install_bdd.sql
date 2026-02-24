@@ -55,35 +55,37 @@ USE `MES4_Analysis`;
 -- ==============================================================================
 CREATE OR REPLACE VIEW `V_Conso_Energetique_Reelle` AS
 SELECT 
-    op.Description AS Machine,
+    res.ResourceName AS Machine, -- On récupère le vrai nom de la machine (ex: Robotino, Station A)
     
     -- Temps total de fonctionnement en HEURES (Indicateur de charge)
     ROUND(SUM(TIMESTAMPDIFF(SECOND, fp.Start, fp.End)) / 3600, 2) AS Heures_Fonctionnement,
     
     -- 1. CONSOMMATION ÉLECTRIQUE
-    -- On multiplie chaque seconde de travail par la valeur 'ElectricEnergy' de la machine
+    -- Temps (en secondes) multiplié par la conso électrique spécifique de cette machine pour cette opération
     SUM(
         TIMESTAMPDIFF(SECOND, fp.Start, fp.End) * IFNULL(ro.ElectricEnergy, 0)
     ) AS Conso_Elec_Totale,
     
     -- 2. CONSOMMATION AIR COMPRIMÉ
-    -- On multiplie chaque seconde de travail par la valeur 'CompressedAir' de la machine
+    -- Temps (en secondes) multiplié par la conso pneumatique
     SUM(
         TIMESTAMPDIFF(SECOND, fp.Start, fp.End) * IFNULL(ro.CompressedAir, 0)
     ) AS Conso_Air_Total
 
 FROM 
     `mes4`.`tblfinorderpos` fp
+-- CHANGEMENT ICI : On joint la table des Ressources (Machines) au lieu des Opérations
 JOIN 
-    `mes4`.`tbloperation` op ON fp.OpNo = op.OpNo
--- Jointure précise : On lie l'opération ET la ressource spécifique utilisée
+    `mes4`.`tblresource` res ON fp.ResourceID = res.ResourceID
+-- On garde cette jointure qui contient les paramètres énergétiques du couple (Machine + Opération)
 LEFT JOIN 
     `mes4`.`tblresourceoperation` ro ON fp.OpNo = ro.OpNo AND fp.ResourceID = ro.ResourceID
 
 WHERE 
     fp.Start IS NOT NULL AND fp.End IS NOT NULL
+-- CHANGEMENT ICI : On groupe par le nom de la machine
 GROUP BY 
-    op.Description
+    res.ResourceName
 ORDER BY 
     Conso_Elec_Totale DESC;
 
