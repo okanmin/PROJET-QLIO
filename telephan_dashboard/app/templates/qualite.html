@@ -103,15 +103,15 @@
                 y1: { position: 'right', min: 0, max: 100, ticks: { color: colorWhite }, grid: { drawOnChartArea: false } },
                 x: { ticks: { color: colorWhite } }
             },
-            plugins: {
+           plugins: {
                 legend: { 
                     labels: { 
-                        color: colorWhite,
+                        color: colorWhite, // Couleur par défaut de la légende
                         generateLabels: () => [
-                            { text: 'Conforme', fillStyle: colorGood },
-                            { text: 'Erreur', fillStyle: colorBad },
-                            { text: 'Courbe Cumul', strokeStyle: colorAccent, lineWidth: 2 },
-                            { text: 'Seuil 80%', strokeStyle: 'white', lineDash: [5, 5], lineWidth: 2 }
+                            { text: 'Conforme', fillStyle: colorGood, fontColor: colorWhite },
+                            { text: 'Erreur', fillStyle: colorBad, fontColor: colorWhite },
+                            { text: 'Courbe Cumul', strokeStyle: colorAccent, lineWidth: 2, fontColor: colorWhite },
+                            { text: 'Seuil 80%', strokeStyle: 'white', lineDash: [5, 5], lineWidth: 2, fontColor: colorWhite }
                         ]
                     }
                 }
