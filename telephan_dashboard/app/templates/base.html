@@ -18,7 +18,18 @@
     <div class="segment" style="flex:1;">
       <div style="width:100%;">
         <div class="label">Date</div>
-        <input class="input" type="date" value="{{ current_date or '' }}">
+        <input class="input" type="date" value="{{ current_date or '' }}" onchange="updateDate(this.value)">
+
+        <script>
+        function updateDate(newDate) {
+          // Crée un objet URL à partir de la page courante
+          let url = new URL(window.location.href);
+          // Ajoute ou modifie le paramètre 'date'
+          url.searchParams.set('date', newDate);
+          // Recharge la page avec la nouvelle URL (ex: /qualite?date=2025-12-02)
+          window.location.href = url.href;
+        }
+        </script>
       </div>
     </div>
 

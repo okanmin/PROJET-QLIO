@@ -72,15 +72,23 @@ def home():
 @auth_bp.get("/qualite")
 @login_required
 def qualite_page():
-    """Page Qualité : Pareto, Taux de panne et Énergie"""
+    """Page Qualité : Pareto, Taux de panne filtré par date et Énergie"""
+    
+    # 1. Gestion de la date depuis le calendrier du HTML
+    selected_date = request.args.get("date")
+    
+    # Date par défaut pour vos données de test
+    if not selected_date:
+        selected_date = "2025-12-02" 
+
     success_kpi = {"taux": 0, "nb": 0, "total": 0}
     pareto_data_formatted = []
-    energy_data_formatted = [] # <--- CETTE VARIABLE MANQUAIT SUREMENT
+    energy_data_formatted = []
     taux_panne = 0
     couleur_panne = "var(--good)"
 
     try:
-        # 1. Pareto et KPI de succès
+        # --- A. Pareto et KPI de succès ---
         query_pareto = text("""
             SELECT Categorie, Quantite, Pourcentage_Courbe, Total_General 
             FROM MES4_Analysis.V_Pareto_Global
@@ -107,15 +115,33 @@ def qualite_page():
                     "is_ok": is_ok
                 })
 
-        # 2. Taux d'arrêt (Chiffre Spot)
-        query_panne = text("SELECT Taux_Arret_Panne_Pourcentage FROM MES4_Analysis.V_Taux_Panne_Par_Jour LIMIT 1")
-        res_panne = db.session.execute(query_panne).fetchone()
-        if res_panne:
-            taux_panne = float(res_panne[0] or 0.0)
-            if taux_panne >= 50: couleur_panne = "var(--bad)"
-            elif taux_panne >= 20: couleur_panne = "#ff9f43"
+        # --- B. Taux d'arrêt avec filtrage de la date (Utilisation de la VUE exacte) ---
+        query_tp = text("""
+            SELECT Taux_Arret_Panne_Pourcentage 
+            FROM MES4_Analysis.V_Taux_Panne_Par_Jour 
+            WHERE DATE(Date_Jour) = :date_choisie
+            LIMIT 1
+        """)
+        
+        res_tp = db.session.execute(query_tp, {"date_choisie": selected_date}).fetchone()
+        
+        if res_tp and res_tp[0] is not None: 
+            # La donnée existe pour cette date
+            taux_panne = float(res_tp[0])
+            
+            # Application des couleurs dynamiques
+            if taux_panne >= 50: 
+                couleur_panne = "var(--bad)"
+            elif taux_panne >= 20: 
+                couleur_panne = "#ff9f43"
+            else:
+                couleur_panne = "var(--good)"
+        else:
+            # Pas de production ou de pannes à cette date précise
+            taux_panne = 0
+            couleur_panne = "gray"
 
-        # 3. Énergie (C'est cette partie qui corrige votre erreur 500)
+        # --- C. Énergie ---
         query_energy = text("SELECT Machine, Conso_Elec_Totale, Conso_Air_Total FROM MES4_Analysis.V_Conso_Energetique_Reelle")
         res_energy = db.session.execute(query_energy).fetchall()
         for r in res_energy:
@@ -128,14 +154,15 @@ def qualite_page():
     except Exception as e:
         print(f"Erreur SQL Qualité : {e}")
 
-    # ATTENTION : energy_data=energy_data_formatted doit être présent ici !
+    # Envoi au HTML (On transmet la variable 'current_date')
     return render_template("qualite.html", 
                            user=session["user"], 
+                           current_date=selected_date,
                            success_kpi=success_kpi, 
                            pareto_data=pareto_data_formatted,
                            taux_panne=taux_panne,
                            couleur_panne=couleur_panne,
-                           energy_data=energy_data_formatted) # <--- CRUCIAL
+                           energy_data=energy_data_formatted)
 
 @auth_bp.get("/performance")
 @login_required
@@ -165,7 +192,7 @@ def robotino_page():
         "availability_pct": None,
     }
 
-    cycle_points = []  # {label, total_min, charge_min, travel_min}
+    cycle_points = []
 
     def _parse_ts(s: str):
         try:
@@ -197,7 +224,6 @@ def robotino_page():
                 if not ts:
                     continue
 
-                # Batterie : moyenne des capacities >= 0 (les -2 = “non dispo”)
                 caps = []
                 for i in range(8):
                     c = _to_float(row.get(f"festool_charger_capacities_{i}"), None)
@@ -205,16 +231,13 @@ def robotino_page():
                         caps.append(c)
                 battery_pct = sum(caps) / len(caps) if caps else None
 
-                # Batterie faible : flags Festool + power_batteryLow
                 battery_low = (
                     _to_bool(row.get("power_batteryLow"))
                     or _to_bool(row.get("festool_charger_batteryLow_0"))
                     or _to_bool(row.get("festool_charger_batteryLow_1"))
                 )
 
-                # Charge : robot branché
                 ext_power = _to_bool(row.get("power_ext_power"))
-
                 vx = _to_float(row.get("odometry_vx"), 0.0) or 0.0
                 vy = _to_float(row.get("odometry_vy"), 0.0) or 0.0
 
@@ -225,13 +248,10 @@ def robotino_page():
                 vx_series.append(vx)
                 vy_series.append(vy)
 
-    # Autonomie (h) = (niveau%/100) * autonomie totale
-    # => autonomie totale modifiable côté UI (défaut 2h)
     autonomy_full_hours = 2.0
     for bp in battery_pct_series:
         autonomy_hours_series.append(None if bp is None else round((bp / 100.0) * autonomy_full_hours, 3))
 
-    # KPI current (dernière valeur batterie non nulle)
     for i in range(len(time_series) - 1, -1, -1):
         if battery_pct_series[i] is not None:
             kpi_current["battery_pct"] = round(float(battery_pct_series[i]), 1)
@@ -239,12 +259,11 @@ def robotino_page():
             kpi_current["battery_low"] = bool(battery_low_series[i])
             break
 
-    # Disponibilité (V2 – proxy) : temps en mouvement / temps total
     if len(time_series) >= 2:
         tss = [datetime.fromisoformat(t) for t in time_series]
         total_s = 0.0
         active_s = 0.0
-        speed_threshold = 0.01  # seuil
+        speed_threshold = 0.01
         for i in range(1, len(tss)):
             dt = (tss[i] - tss[i - 1]).total_seconds()
             if dt <= 0:
@@ -256,10 +275,9 @@ def robotino_page():
         if total_s > 0:
             kpi_current["availability_pct"] = round((active_s / total_s) * 100.0, 1)
 
-    # Cycles : proxy via power_ext_power (début/fin de charge)
     if len(time_series) >= 2:
         tss = [datetime.fromisoformat(t) for t in time_series]
-        sessions = []  # (start_dt, end_dt)
+        sessions = []
         start_dt = tss[0] if bool(ext_power_series[0]) else None
 
         for i in range(1, len(tss)):
