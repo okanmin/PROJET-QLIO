@@ -9,7 +9,6 @@ import bcrypt
 from sqlalchemy import text
 from . import db
 
-
 # Initialisation du Blueprint
 auth_bp = Blueprint("auth", __name__)
 
@@ -84,10 +83,6 @@ def logout():
 
 # --- Nouvelles Routes par métier ---
 
-# --- Routes par Services ---
-
-# --- Routes par Services (Filtres opérationnels) ---
-
 @auth_bp.get("/home")
 @login_required
 def home():
@@ -97,36 +92,70 @@ def home():
 @auth_bp.get("/qualite")
 @login_required
 def qualite_page():
-    """Page Qualité : Diagramme de Pareto complet"""
+    """Page Qualité : Calculs effectués en Python pour un affichage HTML pur"""
     success_kpi = {"taux": 0, "nb": 0, "total": 0}
-    pareto_data = []
+    pareto_data_formatted = []
     
     try:
-        # Récupération de toutes les lignes (OK + KO) classées par quantité décroissante
+        # Récupération des données classées de la vue SQL
         query = text("""
             SELECT Categorie, Quantite, Pourcentage_Courbe, Total_General 
             FROM MES4_Analysis.V_Pareto_Global
+            ORDER BY Quantite DESC
         """)
         results = db.session.execute(query).fetchall()
         
         if results:
-            pareto_data = results
-            # Calcul du KPI pour la carte de score
+            # 1. Calcul du KPI global pour les cartes (On cherche la ligne OK/Conforme)
             for row in results:
-                if row[0] == 'Opération Conforme (OK)':
+                # SÉCURISATION : Si la catégorie est NULL, on la remplace par du texte
+                categorie = str(row[0] or "Erreur non référencée")
+                # SÉCURISATION : Forcer en entiers pour éviter les bugs "Decimal"
+                quantite = int(row[1] or 0)
+                total_gen = int(row[3] or 0)
+                
+                if "OK" in categorie.upper() or "CONFORME" in categorie.upper():
                     success_kpi = {
-                        "nb": row[1],
-                        "total": row[3],
-                        "taux": round((row[1] / row[3]) * 100, 1) if row[3] > 0 else 0
+                        "nb": quantite,
+                        "total": total_gen,
+                        "taux": float(round((quantite / total_gen) * 100, 1)) if total_gen > 0 else 0.0
                     }
                     break
+            
+            # 2. Formatage des données pour le rendu HTML
+            cumul = 0.0
+            for row in results:
+                # SÉCURISATION DES TYPES
+                categorie = str(row[0] or "Erreur non référencée")
+                quantite = int(row[1] or 0)
+                total_gen = int(row[3] or 0)
+                
+                # Calcul de la proportion exacte par rapport au total (en float pour JS)
+                pourcentage = float((quantite / total_gen * 100)) if total_gen > 0 else 0.0
+                
+                cumul += pourcentage
+                if cumul > 100.0:
+                    cumul = 100.0 # Éviter les dépassements (100.01% etc.) dus aux arrondis
+                    
+                is_ok = "OK" in categorie.upper() or "CONFORME" in categorie.upper()
+                
+                # Création d'un dictionnaire prêt à être lu par Jinja2 et Chart.js
+                pareto_data_formatted.append({
+                    "label": categorie,
+                    "qty": quantite,
+                    "pct": float(round(pourcentage, 1)),
+                    "cumul": float(round(cumul, 1)),
+                    "is_ok": is_ok
+                })
+
     except Exception as e:
-        print(f"Erreur SQL Qualité : {e}")
+        # Affichera l'erreur précise dans les logs du terminal (Docker)
+        print(f"!!! ERREUR SQL QUALITÉ !!! : {e}")
 
     return render_template("qualite.html", 
                            user=session["user"], 
                            success_kpi=success_kpi, 
-                           pareto_data=pareto_data)
+                           pareto_data=pareto_data_formatted)
 
 @auth_bp.get("/performance")
 @login_required
