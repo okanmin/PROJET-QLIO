@@ -130,9 +130,9 @@ def qualite_page():
             taux_panne = float(res_tp[0])
             
             # Application des couleurs dynamiques
-            if taux_panne >= 50: 
+            if taux_panne >= 10: 
                 couleur_panne = "var(--bad)"
-            elif taux_panne >= 20: 
+            elif taux_panne >= 5: 
                 couleur_panne = "#ff9f43"
             else:
                 couleur_panne = "var(--good)"
