@@ -1,179 +1,232 @@
-{# templates/robotino.html #}
+{# templates/robotino.html — version “dashboard” (KPI + sparklines + liste scroll + fullscreen) #}
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container py-4">
+<style>
+  .rbt-wrap{max-width:1200px;margin:0 auto;padding:18px 14px;}
+  .rbt-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;}
+  .rbt-title{margin:0;font-size:1.25rem;font-weight:800;letter-spacing:.2px;}
+  .rbt-sub{opacity:.65;font-size:.85rem;white-space:nowrap}
 
-  <div class="d-flex align-items-center justify-content-between mb-3">
-    <h2 class="m-0">Indicateurs Robotino</h2>
-    <div class="text-muted small">Source : robotino_data.csv</div>
+  .kpi-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px;margin:12px 0 10px;}
+  .kpi{grid-column:span 12;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);
+       border-radius:18px;padding:14px;backdrop-filter: blur(8px); box-shadow: 0 10px 30px rgba(0,0,0,.18);}
+  @media (min-width: 900px){ .kpi{grid-column:span 4;} }
+
+  .kpi-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+  .chip{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;
+        background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);font-size:.85rem;opacity:.92}
+  .dot{width:10px;height:10px;border-radius:50%;background:#22c55e}
+  .dot.bad{background:#ef4444}
+  .dot.warn{background:#f59e0b}
+
+  .kpi-value{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
+  .kpi-main{display:flex;align-items:baseline;gap:8px}
+  .num{font-size:2.05rem;font-weight:900;line-height:1}
+  .unit{opacity:.7;font-size:1rem}
+  .spark-wrap{width:120px;height:34px;opacity:.95}
+  .spark-wrap canvas{width:100%!important;height:100%!important}
+
+  .rbt-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:flex-end;margin:10px 0 12px}
+  .input-pill{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);
+              border:1px solid rgba(255,255,255,.10);border-radius:12px;padding:8px 10px}
+  .input-pill input{width:84px;background:transparent;border:none;outline:none;color:inherit}
+  .btn-pill{border-radius:12px;padding:8px 10px;border:1px solid rgba(255,255,255,.14);
+            background:rgba(255,255,255,.04);color:inherit}
+  .btn-pill:hover{background:rgba(255,255,255,.08)}
+  .alert-chip{display:none;border-color:rgba(239,68,68,.35)!important;background:rgba(239,68,68,.12)!important}
+
+  .panel-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px;}
+  .panel{grid-column:span 12;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);
+         border-radius:18px;padding:14px;box-shadow: 0 10px 30px rgba(0,0,0,.18);}
+  @media (min-width: 900px){
+    .panel.wide{grid-column:span 12;}
+    .panel.half{grid-column:span 6;}
+  }
+
+  .panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+  .panel-title{margin:0;font-size:1rem;font-weight:800;opacity:.95}
+  .panel-actions{display:flex;align-items:center;gap:8px}
+  .badge-soft{font-size:.8rem;opacity:.65}
+
+  .canvas-wrap{height:380px}
+  .canvas-wrap.sm{height:300px}
+  canvas{max-width:100%}
+
+  /* Scroll list */
+  .cycle-list{max-height:320px;overflow:auto;padding-right:4px}
+  .cycle-item{display:flex;align-items:center;justify-content:space-between;gap:10px;
+              padding:10px 12px;margin-bottom:10px;border-radius:16px;
+              background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)}
+  .cycle-left{display:flex;flex-direction:column;gap:3px}
+  .cycle-title{font-weight:800}
+  .cycle-mini{opacity:.7;font-size:.85rem}
+  .cycle-right{display:flex;gap:8px;align-items:center}
+  .pill{padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.06);
+        border:1px solid rgba(255,255,255,.10);font-size:.85rem;white-space:nowrap}
+  .muted{opacity:.7}
+
+  /* Fullscreen modal */
+  .fs-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;z-index:9998}
+  .fs-card{position:fixed;inset:24px;background:#0b0b0b;border:1px solid rgba(255,255,255,.12);
+           border-radius:20px;padding:14px;display:none;z-index:9999;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+  .fs-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+  .fs-title{margin:0;font-size:1rem;font-weight:800}
+  .fs-close{cursor:pointer}
+  .fs-body{height:calc(100% - 44px)}
+  .fs-body canvas{width:100%!important;height:100%!important}
+</style>
+
+<div class="rbt-wrap">
+  <div class="rbt-head">
+    <h2 class="rbt-title">Robotino</h2>
+    <div class="rbt-sub">robotino_data.csv</div>
   </div>
 
   <!-- KPI -->
-  <div class="row g-3 mb-4">
-    <div class="col-12 col-md-4">
-      <div class="card h-100">
-        <div class="card-body">
-          <div class="text-muted small">Batterie (dernier point)</div>
-          <div class="d-flex align-items-baseline gap-2">
-            <div class="display-6 fw-semibold">
-              {{ kpi.battery_pct if kpi and kpi.battery_pct is not none else "—" }}
-            </div>
-            <div class="fs-4 text-muted">%</div>
-          </div>
-          <div class="mt-2">
-            {% if kpi and kpi.battery_low %}
-              <span class="badge bg-danger">Batterie faible</span>
-            {% else %}
-              <span class="badge bg-success">OK</span>
-            {% endif %}
-          </div>
-          <div class="mt-2 text-muted small">
-            Autonomie estimée :
-            <strong>{{ kpi.autonomy_hours if kpi and kpi.autonomy_hours is not none else "—" }}</strong> h
-          </div>
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-top">
+        <div class="chip">
+          <span class="dot {% if kpi and kpi.battery_low %}bad{% endif %}"></span>
+          Batterie
         </div>
+        <div class="chip muted">Live</div>
+      </div>
+      <div class="kpi-value">
+        <div class="kpi-main">
+          <div class="num">{{ kpi.battery_pct if kpi and kpi.battery_pct is not none else "—" }}</div>
+          <div class="unit">%</div>
+        </div>
+        <div class="spark-wrap"><canvas id="sparkBattery"></canvas></div>
       </div>
     </div>
 
-    <div class="col-12 col-md-4">
-      <div class="card h-100">
-        <div class="card-body">
-          <div class="text-muted small">Autonomie totale à 100%</div>
-          <div class="d-flex align-items-center gap-2 mt-2">
-            <input id="autonomyFullHours" type="number" class="form-control" step="0.1" min="0" value="{{ autonomy_full_hours if autonomy_full_hours is not none else 2.0 }}">
-            <span class="text-muted">heures</span>
-          </div>
-          <div class="text-muted small mt-2">
-            Formule : (batterie% / 100) × autonomie totale.
-          </div>
+    <div class="kpi">
+      <div class="kpi-top">
+        <div class="chip"><span class="dot"></span>Autonomie</div>
+        <div class="input-pill" title="Autonomie à 100%">
+          <span class="muted">100%</span>
+          <input id="autonomyFullHours" type="number" step="0.1" min="0"
+                 value="{{ autonomy_full_hours if autonomy_full_hours is not none else 2.0 }}">
+          <span class="muted">h</span>
         </div>
+      </div>
+      <div class="kpi-value">
+        <div class="kpi-main">
+          <div class="num">{{ kpi.autonomy_hours if kpi and kpi.autonomy_hours is not none else "—" }}</div>
+          <div class="unit">h</div>
+        </div>
+        <div class="spark-wrap"><canvas id="sparkAutonomy"></canvas></div>
       </div>
     </div>
 
-    <div class="col-12 col-md-4">
-      <div class="card h-100">
-        <div class="card-body">
-          <div class="text-muted small">Disponibilité</div>
-          <div class="d-flex align-items-baseline gap-2">
-            <div class="display-6 fw-semibold">
-              {{ kpi.availability_pct if kpi and kpi.availability_pct is not none else "—" }}
-            </div>
-            <div class="fs-4 text-muted">%</div>
-          </div>
+    <div class="kpi">
+      <div class="kpi-top">
+        <div class="chip"><span class="dot"></span>Dispo</div>
+        <div class="input-pill" title="Seuil batterie">
+          <span class="muted">Seuil</span>
+          <input id="criticalThreshold" type="number" step="1" min="0" max="100" value="15">
+          <span class="muted">%</span>
         </div>
       </div>
-    </div>
-  </div>
-
-  <!-- Filtres + alertes -->
-  <div class="card mb-4">
-    <div class="card-body">
-      <div class="row g-3 align-items-end">
-        <div class="col-12 col-md-3">
-          <label class="form-label">Seuil batterie critique (%)</label>
-          <input id="criticalThreshold" type="number" class="form-control" step="1" min="0" max="100" value="15">
+      <div class="kpi-value">
+        <div class="kpi-main">
+          <div class="num">{{ kpi.availability_pct if kpi and kpi.availability_pct is not none else "—" }}</div>
+          <div class="unit">%</div>
         </div>
-        <div class="col-12 col-md-4">
-          <div id="batteryAlert" class="alert alert-warning mb-0 d-none" role="alert">
-            Seuil critique atteint sur la période affichée.
-          </div>
-        </div>
-        <div class="col-12 col-md-5 text-md-end">
-          <button id="resetZoomBtn" class="btn btn-outline-secondary">Réinitialiser (affichage)</button>
-        </div>
+        <div class="spark-wrap"><canvas id="sparkAvailability"></canvas></div>
       </div>
     </div>
   </div>
 
-  <!-- Graphs -->
-  <div class="row g-4">
-    <div class="col-12">
-      <div class="card">
-        <div class="card-body">
-          <div class="d-flex align-items-center justify-content-between mb-2">
-            <h5 class="m-0">Batterie (%) & Autonomie (h) vs Temps</h5>
-            <span class="text-muted small">Courbe</span>
-          </div>
-          <div style="height: 380px;">
-            <canvas id="batteryChart"></canvas>
-          </div>
+  <!-- Controls -->
+  <div class="rbt-controls">
+    <div id="batteryAlert" class="chip alert-chip">
+      <span class="dot bad"></span>Seuil atteint
+    </div>
+    <button id="resetZoomBtn" class="btn-pill">Reset</button>
+  </div>
+
+  <!-- Panels -->
+  <div class="panel-grid">
+    <div class="panel wide">
+      <div class="panel-head">
+        <h3 class="panel-title">Batterie & autonomie</h3>
+        <div class="panel-actions">
+          <span class="badge-soft">Temps</span>
+          <button class="btn-pill" data-fs="battery">Plein écran</button>
         </div>
+      </div>
+      <div class="canvas-wrap">
+        <canvas id="batteryChart"></canvas>
       </div>
     </div>
 
-    <div class="col-12 col-lg-6">
-      <div class="card h-100">
-        <div class="card-body">
-          <div class="d-flex align-items-center justify-content-between mb-2">
-            <h5 class="m-0">Cycles</h5>
-            <span class="text-muted small">Barres</span>
-          </div>
-          <div style="height: 340px;">
-            <canvas id="cycleChart"></canvas>
-          </div>
-          <div class="text-muted small mt-2">
-            Détection charge : <code>power_ext_power</code>. On calcule <em>charge</em>, <em>travel</em>, <em>total</em>.
-          </div>
+    <div class="panel half">
+      <div class="panel-head">
+        <h3 class="panel-title">Cycles</h3>
+        <div class="panel-actions">
+          <span class="badge-soft">Top 30</span>
+          <button class="btn-pill" data-fs="cycles">Plein écran</button>
         </div>
+      </div>
+      <div class="canvas-wrap sm">
+        <canvas id="cycleChart"></canvas>
       </div>
     </div>
 
-    <div class="col-12 col-lg-6">
-      <div class="card h-100">
-        <div class="card-body">
-          <div class="d-flex align-items-center justify-content-between mb-2">
-            <h5 class="m-0">Détails cycles</h5>
-            <span class="text-muted small">Top 50</span>
-          </div>
-
-          <div class="table-responsive">
-            <table class="table table-sm align-middle mb-0">
-              <thead>
-                <tr>
-                  <th>Cycle</th>
-                  <th class="text-end">Charge (min)</th>
-                  <th class="text-end">Dépl. (min)</th>
-                  <th class="text-end">Total (min)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% if cycles and cycles|length > 0 %}
-                  {% for c in cycles[:50] %}
-                    <tr>
-                      <td>{{ c.label }}</td>
-                      <td class="text-end">{{ c.charge_min if c.charge_min is not none else "—" }}</td>
-                      <td class="text-end">{{ c.travel_min if c.travel_min is not none else "—" }}</td>
-                      <td class="text-end">{{ c.total_min if c.total_min is not none else "—" }}</td>
-                    </tr>
-                  {% endfor %}
-                {% else %}
-                  <tr>
-                    <td colspan="4" class="text-muted">Aucun cycle détecté.</td>
-                  </tr>
-                {% endif %}
-              </tbody>
-            </table>
-          </div>
-
+    <div class="panel half">
+      <div class="panel-head">
+        <h3 class="panel-title">Derniers cycles</h3>
+        <div class="panel-actions">
+          <span class="badge-soft">Top 20</span>
         </div>
       </div>
-    </div>
 
+      <div class="cycle-list">
+        {% if cycles and cycles|length > 0 %}
+          {% for c in cycles[:20] %}
+          <div class="cycle-item">
+            <div class="cycle-left">
+              <div class="cycle-title">{{ c.label }}</div>
+              <div class="cycle-mini">min</div>
+            </div>
+            <div class="cycle-right">
+              <span class="pill">C {{ c.charge_min if c.charge_min is not none else "—" }}</span>
+              <span class="pill">D {{ c.travel_min if c.travel_min is not none else "—" }}</span>
+              <span class="pill">T {{ c.total_min if c.total_min is not none else "—" }}</span>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="cycle-item"><span class="muted">—</span></div>
+        {% endif %}
+      </div>
+    </div>
   </div>
 </div>
 
-<!-- Data from Flask (Jinja -> JS) -->
+<!-- Fullscreen -->
+<div id="fsBackdrop" class="fs-backdrop"></div>
+<div id="fsCard" class="fs-card">
+  <div class="fs-head">
+    <h3 id="fsTitle" class="fs-title">Graph</h3>
+    <button id="fsClose" class="btn-pill fs-close">Fermer</button>
+  </div>
+  <div class="fs-body">
+    <canvas id="fsCanvas"></canvas>
+  </div>
+</div>
+
+<!-- Data -->
 <script>
   const ROBOTINO_TS = {{ (robotino_ts or []) | tojson }};
   const BATTERY_PCT = {{ (battery_pct or []) | tojson }};
-  const AUTONOMY_H_SERVER = {{ (autonomy_h or []) | tojson }};
   const BATTERY_LOW = {{ (battery_low or []) | tojson }};
-  const EXT_POWER = {{ (ext_power or []) | tojson }};
   const CYCLES = {{ (cycles or []) | tojson }};
 </script>
 
-<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
 <script>
@@ -182,7 +235,6 @@
     if (Number.isNaN(n)) return fallback;
     return Math.max(min, Math.min(max, n));
   }
-
   function computeAutonomySeries(batteryPct, autonomyFullHours) {
     return batteryPct.map(v => {
       if (v === null || v === undefined) return null;
@@ -191,7 +243,6 @@
       return (n / 100.0) * autonomyFullHours;
     });
   }
-
   function anyCriticalBattery(batteryPct, threshold) {
     for (let i = 0; i < batteryPct.length; i++) {
       const v = batteryPct[i];
@@ -201,90 +252,53 @@
     }
     return false;
   }
+  function lastN(arr, n) {
+    const a = (arr || []).filter(v => v !== null && v !== undefined && !Number.isNaN(Number(v)));
+    return a.slice(Math.max(0, a.length - n));
+  }
 
-  // Convert timestamps for labels (keep ISO string but nicer on hover)
   const labels = ROBOTINO_TS;
 
-  // Battery chart with 2 y-axes
-  const ctxBattery = document.getElementById("batteryChart");
   const autonomyFullInput = document.getElementById("autonomyFullHours");
   const criticalInput = document.getElementById("criticalThreshold");
-  const alertBox = document.getElementById("batteryAlert");
+  const alertChip = document.getElementById("batteryAlert");
   const resetBtn = document.getElementById("resetZoomBtn");
 
+  // Main battery chart
+  const ctxBattery = document.getElementById("batteryChart");
+
   const batteryDataset = {
-    label: "Batterie (%)",
+    label: "Batterie",
     data: BATTERY_PCT,
     yAxisID: "yBattery",
     borderWidth: 2,
     pointRadius: 0,
     spanGaps: true,
-    tension: 0.15,
+    tension: 0.18,
   };
 
-  // autonomy computed client-side so user can change full hours
   const autonomyDataset = {
-    label: "Autonomie (h)",
+    label: "Autonomie",
     data: computeAutonomySeries(BATTERY_PCT, clampNumber(autonomyFullInput.value, 0, 999, 2.0)),
     yAxisID: "yAutonomy",
     borderWidth: 2,
     pointRadius: 0,
     spanGaps: true,
-    tension: 0.15,
-  };
-
-  const lowFlagDataset = {
-    label: "Batterie faible (flag)",
-    data: BATTERY_LOW.map(v => v ? 1 : null),
-    yAxisID: "yFlag",
-    borderWidth: 0,
-    pointRadius: 0,
-    showLine: false,
+    tension: 0.18,
   };
 
   const batteryChart = new Chart(ctxBattery, {
     type: "line",
-    data: {
-      labels,
-      datasets: [batteryDataset, autonomyDataset]
-    },
+    data: { labels, datasets: [batteryDataset, autonomyDataset] },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       interaction: { mode: "index", intersect: false },
-      plugins: {
-        legend: { display: true },
-        tooltip: {
-          callbacks: {
-            label: (ctx) => {
-              const v = ctx.raw;
-              if (v === null || v === undefined) return `${ctx.dataset.label}: —`;
-              const n = Number(v);
-              if (Number.isNaN(n)) return `${ctx.dataset.label}: —`;
-              const suffix = ctx.dataset.yAxisID === "yBattery" ? "%" : " h";
-              return `${ctx.dataset.label}: ${n.toFixed(2)}${suffix}`;
-            }
-          }
-        }
-      },
+      plugins: { legend: { display: true } },
       scales: {
-        x: {
-          ticks: { maxTicksLimit: 8 },
-        },
-        yBattery: {
-          type: "linear",
-          position: "left",
-          min: 0,
-          max: 100,
-          title: { display: true, text: "Batterie (%)" }
-        },
-        yAutonomy: {
-          type: "linear",
-          position: "right",
-          beginAtZero: true,
-          grid: { drawOnChartArea: false },
-          title: { display: true, text: "Autonomie (h)" }
-        }
+        x: { ticks: { maxTicksLimit: 8 } },
+        yBattery: { type: "linear", position: "left", min: 0, max: 100 },
+        yAutonomy: { type: "linear", position: "right", beginAtZero: true, grid: { drawOnChartArea: false } }
       }
     }
   });
@@ -301,9 +315,9 @@
     data: {
       labels: cycleLabels,
       datasets: [
-        { label: "Charge (min)", data: chargeData, borderWidth: 1 },
-        { label: "Déplacement (min)", data: travelData, borderWidth: 1 },
-        { label: "Total (min)", data: totalData, borderWidth: 1 }
+        { label: "Charge", data: chargeData, borderWidth: 1 },
+        { label: "Dépl.", data: travelData, borderWidth: 1 },
+        { label: "Total", data: totalData, borderWidth: 1 }
       ]
     },
     options: {
@@ -311,36 +325,101 @@
       maintainAspectRatio: false,
       interaction: { mode: "index", intersect: false },
       plugins: { legend: { display: true } },
-      scales: {
-        x: { stacked: false, ticks: { maxTicksLimit: 10 } },
-        y: { beginAtZero: true, title: { display: true, text: "Minutes" } }
-      }
+      scales: { x: { ticks: { maxTicksLimit: 10 } }, y: { beginAtZero: true } }
     }
   });
 
-  function refreshAlertsAndAutonomy() {
+  // Sparklines
+  function makeSpark(canvasId, data) {
+    const ctx = document.getElementById(canvasId);
+    return new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: data.map((_, i) => i + 1),
+        datasets: [{
+          data,
+          borderWidth: 2,
+          pointRadius: 0,
+          tension: 0.25,
+          spanGaps: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        scales: { x: { display: false }, y: { display: false } }
+      }
+    });
+  }
+
+  const sparkBattery = makeSpark("sparkBattery", lastN(BATTERY_PCT, 40));
+  const sparkAutonomy = makeSpark("sparkAutonomy", lastN(computeAutonomySeries(BATTERY_PCT, clampNumber(autonomyFullInput.value, 0, 999, 2.0)), 40));
+  const sparkAvailability = makeSpark("sparkAvailability", lastN([{{ kpi.availability_pct if kpi and kpi.availability_pct is not none else "null" }}], 1));
+
+  // Fullscreen cloning
+  const fsBackdrop = document.getElementById("fsBackdrop");
+  const fsCard = document.getElementById("fsCard");
+  const fsCanvas = document.getElementById("fsCanvas");
+  const fsTitle = document.getElementById("fsTitle");
+  const fsClose = document.getElementById("fsClose");
+  let fsChart = null;
+
+  function openFs(which) {
+    if (fsChart) { fsChart.destroy(); fsChart = null; }
+    fsBackdrop.style.display = "block";
+    fsCard.style.display = "block";
+
+    if (which === "battery") {
+      fsTitle.textContent = "Batterie & autonomie";
+      fsChart = new Chart(fsCanvas, batteryChart.config);
+    } else {
+      fsTitle.textContent = "Cycles";
+      fsChart = new Chart(fsCanvas, cycleChart.config);
+    }
+  }
+
+  function closeFs() {
+    if (fsChart) { fsChart.destroy(); fsChart = null; }
+    fsBackdrop.style.display = "none";
+    fsCard.style.display = "none";
+  }
+
+  document.querySelectorAll("[data-fs]").forEach(btn => {
+    btn.addEventListener("click", () => openFs(btn.getAttribute("data-fs")));
+  });
+  fsClose.addEventListener("click", closeFs);
+  fsBackdrop.addEventListener("click", closeFs);
+
+  // Refresh logic
+  function refresh() {
     const fullHours = clampNumber(autonomyFullInput.value, 0, 999, 2.0);
     const threshold = clampNumber(criticalInput.value, 0, 100, 15);
 
-    // update autonomy line
     autonomyDataset.data = computeAutonomySeries(BATTERY_PCT, fullHours);
     batteryChart.update();
 
-    // alert if critical battery is reached
-    const isCritical = anyCriticalBattery(BATTERY_PCT, threshold);
-    alertBox.classList.toggle("d-none", !isCritical);
+    const critical = anyCriticalBattery(BATTERY_PCT, threshold);
+    alertChip.style.display = critical ? "inline-flex" : "none";
+
+    // update sparks
+    sparkBattery.data.datasets[0].data = lastN(BATTERY_PCT, 40);
+    sparkBattery.update();
+
+    const a = computeAutonomySeries(BATTERY_PCT, fullHours);
+    sparkAutonomy.data.datasets[0].data = lastN(a, 40);
+    sparkAutonomy.update();
   }
 
-  autonomyFullInput.addEventListener("input", refreshAlertsAndAutonomy);
-  criticalInput.addEventListener("input", refreshAlertsAndAutonomy);
+  autonomyFullInput.addEventListener("input", refresh);
+  criticalInput.addEventListener("input", refresh);
 
   resetBtn.addEventListener("click", () => {
     autonomyFullInput.value = "{{ autonomy_full_hours if autonomy_full_hours is not none else 2.0 }}";
     criticalInput.value = "15";
-    refreshAlertsAndAutonomy();
+    refresh();
   });
 
-  // Initial
-  refreshAlertsAndAutonomy();
+  refresh();
 </script>
 {% endblock %}
