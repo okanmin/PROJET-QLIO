@@ -58,5 +58,6 @@ telephan_dashboard/
 ├── Dockerfile           # Configuration de l'image Web
 └── docker-compose.yml   # Orchestration des conteneurs
 
-
+mdp :
+user azertyui
 
