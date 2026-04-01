@@ -130,6 +130,34 @@
           element.style.padding = ''; 
       });
     }
+
+    function exportChartData(chartId, fileName) {
+    const chart = Chart.getChart(chartId);
+    if (!chart) return;
+
+    const labels = chart.data.labels;
+    const datasets = chart.data.datasets;
+
+    // Création de l'en-tête du CSV
+    let csvContent = "data:text/csv;charset=utf-8,Label;";
+    csvContent += datasets.map(ds => ds.label).join(";") + "\n";
+
+    // Parcours des données
+    labels.forEach((label, index) => {
+        let row = label + ";";
+        row += datasets.map(ds => ds.data[index]).join(";");
+        csvContent += row + "\n";
+    });
+
+    // Téléchargement du fichier
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", fileName + ".csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
   </script>
   
 </body>

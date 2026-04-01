@@ -34,17 +34,29 @@
     </div>
 
     <div class="card" style="margin-bottom: 24px;">
-        <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
-            <h2 style="margin: 0;">Diagramme de Pareto (Analyse des Erreurs)</h2>
+    <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+        <h2 style="margin: 0;">Diagramme de Pareto (Analyse des Erreurs)</h2>
+        <div style="display: flex; gap: 8px;">
+            <button class="btn icon-btn" onclick="exportChartData('paretoChart', 'Export_Pareto_Erreurs')" title="Exporter les données Excel">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2ee59d" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+            </button>
+
             <button class="btn icon-btn" data-fs="pareto" title="Plein écran">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
                 </svg>
             </button>
         </div>
-        <div style="position: relative; height: 450px; width: 100%;">
-            <canvas id="paretoChart"></canvas>
-        </div>
+    </div>
+    <div style="position: relative; height: 450px; width: 100%;">
+        <canvas id="paretoChart"></canvas>
+    </div>
     </div>
 
     <div class="grid-2" style="gap: 20px;">
