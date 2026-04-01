@@ -51,7 +51,7 @@
           <option value="{{ url_for('auth.robotino_page') }}" {% if request.path == url_for('auth.robotino_page') %}selected{% endif %}>Robotino</option>
           
           {% if session.user.role == 'admin' %}
-          <option value="{{ url_for('auth.manage_users') }}" {% if request.path == url_for('auth.manage_users') %}selected{% endif %}>⚙️ Gestion Utilisateurs</option>
+          <option value="{{ url_for('auth.manage_users') }}" {% if request.path == url_for('auth.manage_users') %}selected{% endif %}>Gestion Utilisateurs</option>
           {% endif %}
         </select>
       </div>
