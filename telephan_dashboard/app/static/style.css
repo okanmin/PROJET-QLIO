@@ -310,3 +310,8 @@ body{
     display: block;
     margin-top: 2px;
 }
+
+select option {
+  background-color: #ffffff;
+  color: #000000;
+}
