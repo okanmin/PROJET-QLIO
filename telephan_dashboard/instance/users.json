@@ -1,8 +1,4 @@
 {
-    "admin": {
-        "password_hash": "$2b$12$hbPNIdOP1T2bYOSeH5tTKOo833SfkKaPgaSkIkqgaAW3HRf0EjKDW",
-        "role": "admin"
-    },
     "trahita": {
         "password_hash": "$2b$12$Pvxpfi7BWdE9Wfjk9qZdbe/0uR9E6Cd2366AJlNMYdp6H.GQfl6X2",
         "role": "admin"
@@ -14,5 +10,9 @@
     "membre": {
         "password_hash": "$2b$12$g8vkyq.HYCWswSm5yunHv.sB/yplp/olNo1Xtyz.47PJPbSazGpf2",
         "role": "membre"
+    },
+    "admin": {
+        "password_hash": "$2b$12$4Peqfmz7r4gQbKr8/MJ9oeUNXly4aXj5wlnyzAD2tqlEImsZ0OXFK",
+        "role": "admin"
     }
 }
