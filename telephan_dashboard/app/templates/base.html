@@ -46,11 +46,15 @@
     <div class="segment" style="flex:1;">
       <div style="width:100%;">
         <div class="label">Services</div>
-        <select onchange="window.location.href=this.value;">
-          <option value="{{ url_for('auth.home') }}" ...>Accueil (Général)</option>
-          <option value="{{ url_for('auth.qualite_page') }}" ...>Qualité</option>
-          <option value="{{ url_for('auth.performance_page') }}" ...>Performance</option>
-          <option value="{{ url_for('auth.robotino_page') }}" ...>Robotino</option>
+        <select onchange="window.location.href=this.value;" class="input">
+          <option value="{{ url_for('auth.home') }}" {% if request.path == url_for('auth.home') %}selected{% endif %}>Accueil</option>
+          <option value="{{ url_for('auth.qualite_page') }}" {% if request.path == url_for('auth.qualite_page') %}selected{% endif %}>Qualité & Maintenance</option>
+          <option value="{{ url_for('auth.performance_page') }}" {% if request.path == url_for('auth.performance_page') %}selected{% endif %}>Performance</option>
+          <option value="{{ url_for('auth.robotino_page') }}" {% if request.path == url_for('auth.robotino_page') %}selected{% endif %}>Robotino</option>
+          
+          {% if session.user.role == 'admin' %}
+          <option value="{{ url_for('auth.manage_users') }}" {% if request.path == url_for('auth.manage_users') %}selected{% endif %}>⚙️ Gestion Utilisateurs</option>
+          {% endif %}
         </select>
       </div>
     </div>

@@ -23,6 +23,10 @@ def _load_users():
     with open(USERS_FILE, "r", encoding="utf-8") as f:
         return json.load(f)
 
+def _save_users(users):
+    with open(USERS_FILE, "w", encoding="utf-8") as f:
+        json.dump(users, f, indent=4, ensure_ascii=False)
+
 def _verify_password(password: str, hashed: str) -> bool:
     return bcrypt.checkpw(password.encode("utf-8"), hashed.encode("utf-8"))
 
@@ -317,3 +321,46 @@ def robotino_page():
         cycles=cycle_points,
         autonomy_full_hours=autonomy_full_hours,
     )
+
+@auth_bp.route("/admin/users", methods=["GET", "POST"])
+@login_required
+def manage_users():
+    # Sécurité : Seul l'admin entre ici
+    if session["user"]["role"] != "admin":
+        flash("Accès refusé. Réservé aux administrateurs.", "error")
+        return redirect(url_for("auth.home"))
+
+    users = _load_users()
+
+    if request.method == "POST":
+        action = request.form.get("action")
+        
+        # --- CRÉATION ---
+        if action == "add":
+            username = request.form.get("username").strip()
+            password = request.form.get("password")
+            role = request.form.get("role", "lecteur")
+            
+            if not username or not password:
+                flash("Veuillez remplir tous les champs.", "error")
+            elif username in users:
+                flash("Cet identifiant existe déjà.", "error")
+            else:
+                hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+                users[username] = {"password_hash": hashed, "role": role}
+                _save_users(users)
+                flash(f"Utilisateur '{username}' créé avec succès.", "success")
+        
+        # --- SUPPRESSION ---
+        elif action == "delete":
+            target_user = request.form.get("username")
+            if target_user == session["user"]["username"]:
+                flash("Interdit : Vous ne pouvez pas supprimer votre propre compte.", "error")
+            elif target_user in users:
+                del users[target_user]
+                _save_users(users)
+                flash(f"Utilisateur '{target_user}' supprimé.", "success")
+                
+        return redirect(url_for("auth.manage_users"))
+
+    return render_template("admin_users.html", users=users, user=session["user"])
