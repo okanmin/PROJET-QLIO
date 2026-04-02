@@ -1,54 +1,92 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="page glass presentation-page">
-  <div class="card">
-    <div class="card-title">
-      <h2>Bienvenue sur le Dashboard TELEFAN</h2>
-      <span class="badge good">Système Actif</span>
+<div class="grid-4">
+  <section class="metric-card">
+    <div class="metric-head">
+      <h3 class="metric-title">Qualité</h3>
+      <span class="role-pill role-lecteur">Vue</span>
     </div>
+    <div class="metric-value">Pareto</div>
+    <div class="metric-subtext">Pareto et conformité.</div>
+  </section>
+
+  <section class="metric-card">
+    <div class="metric-head">
+      <h3 class="metric-title">Arrêts</h3>
+      <span class="role-pill role-membre">Suivi</span>
+    </div>
+    <div class="metric-value">Pannes</div>
+    <div class="metric-subtext">Incidents et arrêts.</div>
+  </section>
+
+  <section class="metric-card">
+    <div class="metric-head">
+      <h3 class="metric-title">Performance</h3>
+      <span class="role-pill role-lecteur">TRS</span>
+    </div>
+    <div class="metric-value">Flux</div>
+    <div class="metric-subtext">TRS, lead time.</div>
+  </section>
+
+  <section class="metric-card">
+    <div class="metric-head">
+      <h3 class="metric-title">Robotino</h3>
+      <span class="role-pill role-admin">Logistique</span>
+    </div>
+    <div class="metric-value">Cycles</div>
+    <div class="metric-subtext">Batterie et cycles.</div>
+  </section>
+</div>
+
+<div class="grid-2">
+  <section class="info-panel">
+    <h3 class="section-title">Priorités</h3>
     
-    <div class="presentation-content" style="margin-top: 20px; color: white; line-height: 1.6;">
-      <p>
-        Ce tableau de bord est un outil de pilotage en temps réel conçu pour superviser les performances de la ligne de production. 
-        Il permet d'agréger les données provenant des automates pour offrir une visibilité claire sur trois axes majeurs :
-      </p>
+    <ul class="check-list">
+      <li><strong>Qualité</strong> : défauts et arrêts.</li>
+      <li><strong>Performance</strong> : cadence et flux.</li>
+      <li><strong>Robotino</strong> : batterie et cycles.</li>
+    </ul>
+  </section>
 
-      <div class="grid-2" style="margin-top: 30px; gap: 20px;">
-        <div class="info-box" style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid var(--stroke);">
-          <h3 style="color: var(--good); margin-bottom: 10px;">🛡️ Qualité</h3>
-          <p style="font-size: 14px;">
-            Suivi du taux de succès des opérations robotiques et analyse Pareto des causes d'échec pour réduire les rebuts.
-          </p>
-        </div>
-
-        <div class="info-box" style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid var(--stroke);">
-          <h3 style="color: var(--accent); margin-bottom: 10px;">⚡ Performance</h3>
-          <p style="font-size: 14px;">
-            Surveillance de la consommation énergétique (Électricité et Air) pour optimiser les coûts de fonctionnement par machine.
-          </p>
-        </div>
-
-        <div class="info-box" style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid var(--stroke);">
-          <h3 style="color: #ffcc00; margin-bottom: 10px;">📦 Logistique</h3>
-          <p style="font-size: 14px;">
-            Gestion des flux et suivi des missions du Robotino pour assurer l'approvisionnement continu des postes.
-          </p>
-        </div>
-
-        <div class="info-box" style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid var(--stroke);">
-          <h3 style="color: var(--muted); margin-bottom: 10px;">📈 Aide à la décision</h3>
-          <p style="font-size: 14px;">
-            Génération de rapports PDF et indicateurs de rotation de stock pour faciliter le management visuel.
-          </p>
-        </div>
-      </div>
-
-      <p style="margin-top: 30px; text-align: center; color: var(--muted);">
-        <i>Utilisez le menu <b>"Services"</b> en haut à droite pour accéder aux indicateurs détaillés.</i>
-      </p>
-    </div>
-  </div>
+  <section class="table-panel">
+    <h3 class="section-title">Accès rapide</h3>
+    
+    <table>
+      <thead>
+        <tr>
+          <th>Vue</th>
+          <th>Indicateurs clés</th>
+          <th>Accès</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Qualité & maintenance</td>
+          <td>Arrêts, Pareto</td>
+          <td><a href="{{ url_for('auth.qualite_page') }}">Ouvrir</a></td>
+        </tr>
+        <tr>
+          <td>Performance</td>
+          <td>TRS, lead time</td>
+          <td><a href="{{ url_for('auth.performance_page') }}">Ouvrir</a></td>
+        </tr>
+        <tr>
+          <td>Robotino</td>
+          <td>Batterie, cycles</td>
+          <td><a href="{{ url_for('auth.robotino_page') }}">Ouvrir</a></td>
+        </tr>
+        {% if session.user.role == 'admin' %}
+        <tr>
+          <td>Gestion utilisateurs</td>
+          <td>Comptes</td>
+          <td><a href="{{ url_for('auth.manage_users') }}">Ouvrir</a></td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </section>
 </div>
 
 {% endblock %}

@@ -171,7 +171,110 @@ def qualite_page():
 @auth_bp.get("/performance")
 @login_required
 def performance_page():
-    return render_template("performance.html", user=session["user"])
+    """Page Performance : TRS, rotation de stock, obstacles et lead time."""
+
+    valeur_trs = 0
+    rotation_stock = 0
+    nb_obstacles = 0
+    lead_time_data = {"labels": [], "datasets": []}
+    trs_history_data = []
+
+    try:
+        query_trs = text("""
+            SELECT
+                SUM(TIMESTAMPDIFF(MINUTE, Start, End)) AS TempsReel,
+                SUM(TIMESTAMPDIFF(MINUTE, PlannedStart, PlannedEnd)) AS TempsPlanifie
+            FROM mes4.tblfinstep
+            WHERE Start IS NOT NULL
+              AND End IS NOT NULL
+              AND PlannedStart IS NOT NULL
+              AND PlannedEnd IS NOT NULL
+        """)
+        res_trs = db.session.execute(query_trs).fetchone()
+        if res_trs and res_trs[0] and res_trs[1] and float(res_trs[0]) > 0:
+            calcul_trs = (float(res_trs[1]) / float(res_trs[0])) * 100
+            valeur_trs = round(min(calcul_trs, 100.0), 1)
+
+        query_trs_history = text("""
+            SELECT * FROM (
+                SELECT
+                    DATE(Start) AS Jour,
+                    ROUND(
+                        LEAST(
+                            100,
+                            (SUM(TIMESTAMPDIFF(MINUTE, PlannedStart, PlannedEnd)) /
+                             NULLIF(SUM(TIMESTAMPDIFF(MINUTE, Start, End)), 0)) * 100
+                        ),
+                        1
+                    ) AS TRS
+                FROM mes4.tblfinstep
+                WHERE Start IS NOT NULL
+                  AND End IS NOT NULL
+                  AND PlannedStart IS NOT NULL
+                  AND PlannedEnd IS NOT NULL
+                GROUP BY DATE(Start)
+                ORDER BY DATE(Start) DESC
+                LIMIT 10
+            ) t
+            ORDER BY Jour ASC
+        """)
+        for row in db.session.execute(query_trs_history).fetchall():
+            trs_history_data.append({
+                "date": str(row[0]),
+                "val": float(row[1] or 0)
+            })
+
+        query_lead_time = text("""
+            SELECT
+                Description,
+                AVG(TIMESTAMPDIFF(MINUTE, Start, End)) AS DureeMoyenne
+            FROM mes4.tblfinstep
+            WHERE Start IS NOT NULL AND End IS NOT NULL AND Description IS NOT NULL
+            GROUP BY Description
+            ORDER BY DureeMoyenne DESC
+            LIMIT 5
+        """)
+        res_lt = db.session.execute(query_lead_time).fetchall()
+        if res_lt:
+            lead_time_data = {
+                "labels": [((str(row[0])[:18] + "…") if len(str(row[0])) > 18 else str(row[0])) for row in res_lt],
+                "datasets": [{
+                    "label": "Durée moyenne (minutes)",
+                    "data": [round(float(row[1] or 0), 1) for row in res_lt]
+                }]
+            }
+
+        query_stock = text("""
+            SELECT COUNT(*)
+            FROM mes4.tblbufferpos
+            WHERE PNo > 0 AND Booked = 0
+        """)
+        stock_actuel = db.session.execute(query_stock).scalar() or 0
+        if stock_actuel:
+            rotation_stock = round(stock_actuel / 10.0, 1)
+
+        query_obs = text("""
+            SELECT COUNT(*)
+            FROM mes4.tblmachinereport
+            WHERE ErrorL0 = 1 OR ErrorL1 = 1
+        """)
+        nb_obstacles = db.session.execute(query_obs).scalar() or 0
+
+    except Exception as e:
+        print(f"Erreur SQL Performance : {e}")
+
+    couleur_trs = "var(--good)" if valeur_trs >= 70 else "var(--bad)"
+
+    return render_template(
+        "performance.html",
+        user=session["user"],
+        valeur_trs=valeur_trs,
+        couleur_trs=couleur_trs,
+        rotation_stock=rotation_stock,
+        nb_obstacles=nb_obstacles,
+        trs_history_data=trs_history_data,
+        lead_time_data=lead_time_data,
+    )
 
 @auth_bp.get("/robotino")
 @login_required

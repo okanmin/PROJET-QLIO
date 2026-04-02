@@ -1,18 +1,18 @@
 {
-    "trahita": {
-        "password_hash": "$2b$12$Pvxpfi7BWdE9Wfjk9qZdbe/0uR9E6Cd2366AJlNMYdp6H.GQfl6X2",
-        "role": "admin"
-    },
-    "lecteur": {
-        "password_hash": "$2b$12$KEua.hP.S/gTcxv4sUhbf.HF4ayi1Lk5xjs7wuqvuUTTls6CY0AHG",
-        "role": "lecteur"
-    },
-    "membre": {
-        "password_hash": "$2b$12$g8vkyq.HYCWswSm5yunHv.sB/yplp/olNo1Xtyz.47PJPbSazGpf2",
-        "role": "membre"
-    },
-    "admin": {
-        "password_hash": "$2b$12$4Peqfmz7r4gQbKr8/MJ9oeUNXly4aXj5wlnyzAD2tqlEImsZ0OXFK",
-        "role": "admin"
-    }
+  "trahita": {
+    "password_hash": "$2b$12$qA0gbgT9Bq81iLQ9X8sKZO57y.fbY0w/5EBvdf6I87n6x5KT33QsK",
+    "role": "admin"
+  },
+  "lecteur": {
+    "password_hash": "$2b$12$J8PKPtuYdqoR5AH5lcOIaOO3fQM.aIBDI5SM0Tz4xDkVQLNhFLLOy",
+    "role": "lecteur"
+  },
+  "membre": {
+    "password_hash": "$2b$12$b4LJZ6wn6qxPfrgp0eaoJ.J797jtxu7/MYZrqxyDrprGf3dt5EKyq",
+    "role": "membre"
+  },
+  "admin": {
+    "password_hash": "$2b$12$Lcw244KM1pqPI5UJpJzdQ.VVEwYxuashE4gKktlAYUCgPke6PGY/O",
+    "role": "admin"
+  }
 }

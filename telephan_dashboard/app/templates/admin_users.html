@@ -1,66 +1,76 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="content">
-    <h1 style="color: white; margin-bottom: 20px;">Gestion des Utilisateurs</h1>
+<div class="grid-2">
+  <section class="info-panel">
+    <h2 class="section-title">Ajouter un utilisateur</h2>
+    
 
-    <div class="card" style="margin-bottom: 30px;">
-        <div class="card-title"><h2>Ajouter un nouvel utilisateur</h2></div>
-        <form method="POST" style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
-            <input type="hidden" name="action" value="add">
-            <div style="flex: 1; min-width: 200px;">
-                <label style="color: gray; display: block; margin-bottom: 5px;">Identifiant</label>
-                <input type="text" name="username" class="input" style="width: 100%;" required>
-            </div>
-            <div style="flex: 1; min-width: 200px;">
-                <label style="color: gray; display: block; margin-bottom: 5px;">Mot de passe</label>
-                <input type="password" name="password" class="input" style="width: 100%;" required>
-            </div>
-            <div style="width: 150px;">
-                <label style="color: gray; display: block; margin-bottom: 5px;">Rôle</label>
-                <select name="role" class="input" style="width: 100%;">
-                    <option value="lecteur">Lecteur</option>
-                    <option value="membre">Membre</option>
-                    <option value="admin">Admin</option>
-                </select>
-            </div>
-            <button type="submit" class="btn btn-primary" style="height: 42px;">Créer l'utilisateur</button>
-        </form>
-    </div>
+    <form method="POST" class="auth-form" style="margin-top:18px;">
+      <input type="hidden" name="action" value="add">
+      <div>
+        <label class="form-label">Identifiant</label>
+        <input type="text" name="username" class="input" required>
+      </div>
+      <div>
+        <label class="form-label">Mot de passe</label>
+        <input type="password" name="password" class="input" required>
+      </div>
+      <div>
+        <label class="form-label">Rôle</label>
+        <select name="role" class="input">
+          <option value="lecteur">Lecteur</option>
+          <option value="membre">Membre</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary">Créer l'utilisateur</button>
+    </form>
+  </section>
 
-    <div class="card">
-        <div class="card-title"><h2>Utilisateurs enregistrés</h2></div>
-        <table style="width: 100%; color: white; border-collapse: collapse;">
-            <thead>
-                <tr style="text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1);">
-                    <th style="padding: 15px;">Identifiant</th>
-                    <th style="padding: 15px;">Rôle</th>
-                    <th style="padding: 15px; text-align: right;">Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for username, data in users.items() %}
-                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                    <td style="padding: 15px;">{{ username }}</td>
-                    <td style="padding: 15px;">
-                        <span class="status-badge" style="background: {% if data.role == 'admin' %}var(--bad){% elif data.role == 'membre' %}#ff9f43{% else %}gray{% endif %};">
-                            {{ data.role }}
-                        </span>
-                    </td>
-                    <td style="padding: 15px; text-align: right;">
-                        {% if username != session.user.username %}
-                        <form method="POST" onsubmit="return confirm('Supprimer cet utilisateur ?');" style="display: inline;">
-                            <input type="hidden" name="action" value="delete">
-                            <input type="hidden" name="username" value="{{ username }}">
-                            <button type="submit" class="btn" style="background: rgba(255, 77, 109, 0.2); color: #ff4d6d; border: 1px solid #ff4d6d;">Supprimer</button>
-                        </form>
-                        {% else %}
-                        <span style="color: gray; font-style: italic;">(Vous)</span>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+  <section class="info-panel">
+    <h2 class="section-title">Accès</h2>
+    
+    <ul class="check-list">
+      <li>Mots de passe hachés.</li>
+      <li>Accès réservé aux admins.</li>
+      <li>Suppression du compte connecté bloquée.</li>
+    </ul>
+  </section>
 </div>
+
+<section class="table-panel">
+  <h2 class="section-title">Utilisateurs enregistrés</h2>
+  
+
+  <table>
+    <thead>
+      <tr>
+        <th>Identifiant</th>
+        <th>Rôle</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for username, data in users.items() %}
+      <tr>
+        <td>{{ username }}</td>
+        <td>
+          <span class="role-pill role-{{ data.role }}">{{ data.role }}</span>
+        </td>
+        <td>
+          {% if username != session.user.username %}
+          <form method="POST" onsubmit="return confirm('Supprimer cet utilisateur ?');" style="display:inline;">
+            <input type="hidden" name="action" value="delete">
+            <input type="hidden" name="username" value="{{ username }}">
+            <button type="submit" class="btn">Supprimer</button>
+          </form>
+          {% else %}
+          <span class="helper-text">Connecté</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
 {% endblock %}

@@ -1,8 +1,362 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2>Analyse des Performances</h2>
-    <p>Bienvenue sur le tableau de bord des performances et TRS.</p>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+{% set trs_ok = valeur_trs >= 70 %}
+{% set bottleneck_label = lead_time_data.labels[0] if lead_time_data.labels else 'Aucune étape identifiée' %}
+{% set bottleneck_value = lead_time_data.datasets[0].data[0] if lead_time_data.datasets and lead_time_data.datasets[0].data else 0 %}
+{% set stock_alert = rotation_stock > 8 %}
+{% set obstacle_alert = nb_obstacles > 0 %}
+
+<section class="hero-panel performance-hero">
+  <div class="hero-grid">
+    <div>
+      <div class="eyebrow">Pilotage de la performance</div>
+      <h2 class="hero-title">Lecture immédiate de la cadence</h2>
+
+      <div class="kpi-band">
+        <span class="kpi-chip">TRS cible : 70 %</span>
+        <span class="kpi-chip">Goulot : {{ bottleneck_label }}</span>
+        <span class="kpi-chip">Obstacles : {{ nb_obstacles }}</span>
+      </div>
     </div>
+
+    <div class="quick-stats performance-quick-stats">
+      <div class="quick-card accent-card">
+        <div class="quick-label">Rendement global</div>
+        <div class="quick-value">{{ valeur_trs }}&nbsp;%</div>
+        <div class="metric-subtext">
+          {% if trs_ok %}Dans la cible.{% else %}Sous la cible.{% endif %}
+        </div>
+      </div>
+      <div class="quick-card soft-card">
+        <div class="quick-label">Étape limitante</div>
+        <div class="quick-value quick-value-sm">{{ bottleneck_label }}</div>
+        <div class="metric-subtext">{{ bottleneck_value }} min.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="grid-4">
+  <section class="metric-card metric-card-premium">
+    <div class="metric-head">
+      <div>
+        <div class="metric-kicker">Disponibilité</div>
+        <h3 class="metric-title">TRS global</h3>
+      </div>
+      <span class="role-pill {% if trs_ok %}role-lecteur{% else %}role-admin{% endif %}">
+        {% if trs_ok %}Objectif atteint{% else %}Sous objectif{% endif %}
+      </span>
+    </div>
+    <div class="metric-value {% if trs_ok %}metric-accent-good{% else %}metric-accent-bad{% endif %}">{{ valeur_trs }} %</div>
+    <div class="metric-subtext">Vue globale du rendement.</div>
+    <div class="metric-progress"><span style="width: {{ valeur_trs if valeur_trs <= 100 else 100 }}%; background: {{ couleur_trs }};"></span></div>
+  </section>
+
+  <section class="metric-card metric-card-premium">
+    <div class="metric-head">
+      <div>
+        <div class="metric-kicker">Flux</div>
+        <h3 class="metric-title">Rotation de stock</h3>
+      </div>
+      <span class="role-pill {% if stock_alert %}role-membre{% else %}role-lecteur{% endif %}">
+        {% if stock_alert %}À surveiller{% else %}Stable{% endif %}
+      </span>
+    </div>
+    <div class="metric-value {% if stock_alert %}metric-accent-warn{% endif %}">{{ rotation_stock }} j</div>
+    <div class="metric-subtext">Temps moyen de rotation.</div>
+    <div class="metric-progress"><span style="width: {{ 100 if rotation_stock > 10 else (rotation_stock * 10) }}%; background: linear-gradient(90deg, #4f8cff, #7c5cff);"></span></div>
+  </section>
+
+  <section class="metric-card metric-card-premium">
+    <div class="metric-head">
+      <div>
+        <div class="metric-kicker">Incidents</div>
+        <h3 class="metric-title">Obstacles détectés</h3>
+      </div>
+      <span class="role-pill {% if obstacle_alert %}role-admin{% else %}role-lecteur{% endif %}">Robotino</span>
+    </div>
+    <div class="metric-value {% if obstacle_alert %}metric-accent-bad{% else %}metric-accent-good{% endif %}">{{ nb_obstacles }}</div>
+    <div class="metric-subtext">Incidents logistiques.</div>
+    <div class="metric-progress"><span style="width: {{ 100 if nb_obstacles > 10 else (nb_obstacles * 10) }}%; background: {% if nb_obstacles == 0 %}linear-gradient(90deg, #22c55e, #86efac){% else %}linear-gradient(90deg, #ef4444, #fca5a5){% endif %};"></span></div>
+  </section>
+
+  <section class="metric-card metric-card-premium">
+    <div class="metric-head">
+      <div>
+        <div class="metric-kicker">Temps de traversée</div>
+        <h3 class="metric-title">Étape la plus longue</h3>
+      </div>
+      <span class="role-pill role-membre">Lead time</span>
+    </div>
+    <div class="metric-value quick-value-sm">{{ bottleneck_label }}</div>
+    <div class="metric-subtext">{{ bottleneck_value }} min.</div>
+    <div class="metric-progress"><span style="width: {{ 100 if bottleneck_value > 120 else ((bottleneck_value / 120) * 100) }}%; background: linear-gradient(90deg, #f59e0b, #facc15);"></span></div>
+  </section>
+</div>
+
+<div class="grid-2">
+  <section class="chart-panel performance-chart-panel">
+    <div class="metric-head">
+      <div>
+        <h2 class="section-title">Évolution du TRS</h2>
+        <p class="section-subtitle">Tendance journalière.</p>
+      </div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn icon-btn" onclick="exportChartData('trsChart', 'Export_TRS')" title="Exporter vers Excel">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2ee59d" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+        </button>
+        <button class="btn icon-btn" data-fs="trs" title="Plein écran">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div class="chart-wrap"><canvas id="trsChart"></canvas></div>
+  </section>
+
+  <section class="chart-panel performance-chart-panel">
+    <div class="metric-head">
+      <div>
+        <h2 class="section-title">Lead time moyen par étape</h2>
+        <p class="section-subtitle">Temps moyen par étape.</p>
+      </div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn icon-btn" onclick="exportChartData('leadTimeChart', 'Export_Lead_Time')" title="Exporter vers Excel">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2ee59d" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+        </button>
+        <button class="btn icon-btn" data-fs="leadtime" title="Plein écran">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div class="chart-wrap"><canvas id="leadTimeChart"></canvas></div>
+  </section>
+</div>
+
+<section class="info-panel">
+  <div class="metric-head">
+    <div>
+      <h2 class="section-title">À retenir</h2>
+      <p class="section-subtitle">Synthèse rapide.</p>
+    </div>
+    <span class="role-pill role-lecteur">Aide à la décision</span>
+  </div>
+
+  <div class="info-grid" style="margin-top:16px;">
+    <div class="info-card">
+      <h3>Rendement</h3>
+      <p class="info-copy">
+        {% if trs_ok %}
+          TRS au-dessus du seuil.
+        {% else %}
+          TRS sous le seuil.
+        {% endif %}
+      </p>
+    </div>
+    <div class="info-card">
+      <h3>Flux</h3>
+      <p class="info-copy">
+        {% if stock_alert %}
+          Flux à surveiller.
+        {% else %}
+          Flux maîtrisé.
+        {% endif %}
+      </p>
+    </div>
+    <div class="info-card">
+      <h3>Goulot</h3>
+      <p class="info-copy"><strong>{{ bottleneck_label }}</strong> · {{ bottleneck_value }} min.</p>
+    </div>
+    <div class="info-card">
+      <h3>Fiabilité terrain</h3>
+      <p class="info-copy">
+        {% if obstacle_alert %}
+          Obstacles détectés.
+        {% else %}
+          Aucun obstacle.
+        {% endif %}
+      </p>
+    </div>
+  </div>
+</section>
+
+<div id="fs-backdrop" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px); z-index:9998;"></div>
+<div id="fs-card" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); width:90vw; height:85vh; background:#101827; border:1px solid rgba(255,255,255,0.1); border-radius:24px; padding:25px; z-index:9999; box-shadow:0 20px 50px rgba(0,0,0,0.5);">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; gap:12px;">
+    <h2 id="fs-title" style="margin:0; color:white;">Analyse détaillée</h2>
+    <button id="fs-close" class="btn">Fermer</button>
+  </div>
+  <div style="position:relative; height:calc(100% - 60px); width:100%;">
+    <canvas id="fs-canvas"></canvas>
+  </div>
+</div>
+
+<script>
+const colorWhite = '#ffffff';
+const colorGood = '#22c55e';
+const colorBad = '#ef4444';
+const colorAccent = '#4f8cff';
+const colorSecondary = '#7c5cff';
+const colorWarn = '#f59e0b';
+
+const rawDataTRS = {{ trs_history_data | tojson | safe }} || [];
+const rawDataLeadTime = {{ lead_time_data | tojson | safe }} || {labels: [], datasets: []};
+
+const trsCtx = document.getElementById('trsChart').getContext('2d');
+const trsGradient = trsCtx.createLinearGradient(0, 0, 0, 320);
+trsGradient.addColorStop(0, 'rgba(79, 140, 255, 0.35)');
+trsGradient.addColorStop(1, 'rgba(79, 140, 255, 0.02)');
+
+const leadCtx = document.getElementById('leadTimeChart').getContext('2d');
+const leadGradient = leadCtx.createLinearGradient(0, 0, 0, 320);
+leadGradient.addColorStop(0, 'rgba(245, 158, 11, 0.95)');
+leadGradient.addColorStop(1, 'rgba(124, 92, 255, 0.55)');
+
+const trsChart = new Chart(document.getElementById('trsChart'), {
+  type: 'line',
+  data: {
+    labels: rawDataTRS.map(d => d.date),
+    datasets: [
+      {
+        label: 'TRS (%)',
+        data: rawDataTRS.map(d => d.val),
+        borderColor: colorAccent,
+        backgroundColor: trsGradient,
+        fill: true,
+        tension: 0.35,
+        borderWidth: 3,
+        pointRadius: 4,
+        pointHoverRadius: 5,
+        pointBackgroundColor: colorAccent
+      },
+      {
+        label: 'Objectif 70%',
+        data: rawDataTRS.map(() => 70),
+        type: 'line',
+        borderColor: colorGood,
+        borderDash: [10, 5],
+        pointRadius: 0,
+        borderWidth: 2
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { labels: { color: colorWhite } },
+      tooltip: {
+        backgroundColor: '#0f172a',
+        borderColor: 'rgba(255,255,255,0.08)',
+        borderWidth: 1,
+        titleColor: colorWhite,
+        bodyColor: colorWhite,
+        padding: 12,
+        displayColors: true
+      }
+    },
+    scales: {
+      y: { min: 0, max: 100, ticks: { color: colorWhite }, grid: { color: 'rgba(255,255,255,0.06)' } },
+      x: { ticks: { color: colorWhite }, grid: { display: false } }
+    }
+  }
+});
+
+const leadTimeChart = new Chart(document.getElementById('leadTimeChart'), {
+  type: 'bar',
+  data: {
+    labels: rawDataLeadTime.labels,
+    datasets: rawDataLeadTime.datasets.map((ds) => ({
+      label: ds.label,
+      data: ds.data,
+      backgroundColor: leadGradient,
+      borderRadius: 10,
+      borderSkipped: false,
+      maxBarThickness: 46
+    }))
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { labels: { color: colorWhite } },
+      tooltip: {
+        backgroundColor: '#0f172a',
+        borderColor: 'rgba(255,255,255,0.08)',
+        borderWidth: 1,
+        titleColor: colorWhite,
+        bodyColor: colorWhite,
+        padding: 12
+      }
+    },
+    scales: {
+      y: { ticks: { color: colorWhite }, grid: { color: 'rgba(255,255,255,0.06)' }, title: { display: true, text: 'Minutes', color: colorWhite } },
+      x: { ticks: { color: colorWhite }, grid: { display: false } }
+    }
+  }
+});
+
+const fsBackdrop = document.getElementById('fs-backdrop');
+const fsCard = document.getElementById('fs-card');
+const fsClose = document.getElementById('fs-close');
+const fsCanvas = document.getElementById('fs-canvas');
+const fsTitle = document.getElementById('fs-title');
+let fsChart = null;
+
+function openFs(chartKey) {
+  let sourceChart = null;
+  let titleText = '';
+
+  if (chartKey === 'trs') {
+    sourceChart = trsChart;
+    titleText = 'Évolution détaillée du TRS';
+  } else if (chartKey === 'leadtime') {
+    sourceChart = leadTimeChart;
+    titleText = 'Analyse détaillée du lead time';
+  }
+
+  if (sourceChart) {
+    fsTitle.innerText = titleText;
+    fsBackdrop.style.display = 'block';
+    fsCard.style.display = 'block';
+
+    if (fsChart) fsChart.destroy();
+    fsChart = new Chart(fsCanvas, {
+      type: sourceChart.config.type,
+      data: JSON.parse(JSON.stringify(sourceChart.config.data)),
+      options: { ...sourceChart.config.options, maintainAspectRatio: false, responsive: true }
+    });
+  }
+}
+
+function closeFs() {
+  if (fsChart) { fsChart.destroy(); fsChart = null; }
+  fsBackdrop.style.display = 'none';
+  fsCard.style.display = 'none';
+}
+
+document.querySelectorAll('[data-fs]').forEach(btn => {
+  btn.addEventListener('click', () => openFs(btn.getAttribute('data-fs')));
+});
+fsClose.addEventListener('click', closeFs);
+fsBackdrop.addEventListener('click', closeFs);
+</script>
 {% endblock %}
