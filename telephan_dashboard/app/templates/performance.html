@@ -397,5 +397,28 @@ function exportAllPageData(filename) {
     link.click();
     document.body.removeChild(link);
 }
+// Fonction pour l'export en Image PNG (identique à la page Qualité)
+function exportChartImage(canvasId, filename) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) {
+        console.error("Canvas introuvable : " + canvasId);
+        return;
+    }
+    
+    // Création d'un lien temporaire pour le téléchargement
+    const link = document.createElement('a');
+    
+    // On convertit le canvas en base64 (image PNG)
+    // 1.0 correspond à la qualité maximale
+    link.href = canvas.toDataURL("image/png", 1.0);
+    
+    // Nom du fichier lors du téléchargement
+    link.download = filename + ".png";
+    
+    // Simulation du clic pour lancer le téléchargement
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
 </script>
 {% endblock %}
