@@ -411,6 +411,34 @@
     sparkAutonomy.update();
   }
 
+  function exportChartData(canvasId, filename) {
+    const chart = Chart.getChart(canvasId);
+    if (!chart) return;
+
+    const labels = chart.data.labels;
+    const datasets = chart.data.datasets;
+    
+    let csvContent = "data:text/csv;charset=utf-8,";
+    let headers = ["Référence / Temps"];
+    datasets.forEach(ds => { headers.push(ds.label || "Valeur"); });
+    csvContent += headers.join(";") + "\n";
+    
+    for (let i = 0; i < labels.length; i++) {
+        let row = [labels[i]];
+        datasets.forEach(ds => {
+            row.push(ds.data[i] !== undefined ? ds.data[i] : "");
+        });
+        csvContent += row.join(";") + "\n";
+    }
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", filename + ".csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
   autonomyFullInput.addEventListener("input", refresh);
   criticalInput.addEventListener("input", refresh);
 

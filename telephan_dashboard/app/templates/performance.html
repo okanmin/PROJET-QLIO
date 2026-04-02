@@ -105,15 +105,19 @@
         <p class="section-subtitle">Tendance journalière.</p>
       </div>
       <div style="display:flex; gap:10px; flex-wrap:wrap;">
-        <button class="btn icon-btn" onclick="exportChartData('trsChart', 'Export_TRS')" title="Exporter vers Excel">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2ee59d" stroke-width="2">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
-            <line x1="16" y1="13" x2="8" y2="13"></line>
-            <line x1="16" y1="17" x2="8" y2="17"></line>
-            <polyline points="10 9 9 9 8 9"></polyline>
-          </svg>
-        </button>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+  {% if user.role != 'lecteur' %}
+  <button class="btn icon-btn" onclick="exportChartData('trsChart', 'Export_TRS')" title="Exporter vers Excel">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2ee59d" stroke-width="2">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+      <polyline points="14 2 14 8 20 8"></polyline>
+      <line x1="16" y1="13" x2="8" y2="13"></line>
+      <line x1="16" y1="17" x2="8" y2="17"></line>
+      <polyline points="10 9 9 9 8 9"></polyline>
+    </svg>
+  </button>
+  {% endif %}
+  <button class="btn icon-btn" data-fs="trs" title="Plein écran">
         <button class="btn icon-btn" data-fs="trs" title="Plein écran">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
@@ -131,15 +135,19 @@
         <p class="section-subtitle">Temps moyen par étape.</p>
       </div>
       <div style="display:flex; gap:10px; flex-wrap:wrap;">
-        <button class="btn icon-btn" onclick="exportChartData('leadTimeChart', 'Export_Lead_Time')" title="Exporter vers Excel">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2ee59d" stroke-width="2">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
-            <line x1="16" y1="13" x2="8" y2="13"></line>
-            <line x1="16" y1="17" x2="8" y2="17"></line>
-            <polyline points="10 9 9 9 8 9"></polyline>
-          </svg>
-        </button>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+  {% if user.role != 'lecteur' %}
+  <button class="btn icon-btn" onclick="exportChartData('leadTimeChart', 'Export_Lead_Time')" title="Exporter vers Excel">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2ee59d" stroke-width="2">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+      <polyline points="14 2 14 8 20 8"></polyline>
+      <line x1="16" y1="13" x2="8" y2="13"></line>
+      <line x1="16" y1="17" x2="8" y2="17"></line>
+      <polyline points="10 9 9 9 8 9"></polyline>
+    </svg>
+  </button>
+  {% endif %}
+  <button class="btn icon-btn" data-fs="leadtime" title="Plein écran">
         <button class="btn icon-btn" data-fs="leadtime" title="Plein écran">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
@@ -359,47 +367,45 @@ document.querySelectorAll('[data-fs]').forEach(btn => {
 fsClose.addEventListener('click', closeFs);
 fsBackdrop.addEventListener('click', closeFs);
 
-// Fonction pour exporter les données d'un graphique Chart.js vers Excel (CSV)
-function exportChartData(canvasId, filename) {
-  // 1. Récupérer l'instance du graphique grâce à son ID
-  const chart = Chart.getChart(canvasId);
-  if (!chart) {
-    console.error("Graphique introuvable !");
-    return;
-  }
-
-  // 2. Préparer les données
-  const labels = chart.data.labels;
-  const datasets = chart.data.datasets;
-  
-  // Utilisation du point-virgule pour que l'Excel français sépare bien les colonnes
-  let csvContent = "data:text/csv;charset=utf-8,";
-  
-  // 3. Créer la ligne des en-têtes (ex: "Label; TRS (%); Objectif 70%")
-  let headers = ["Date / Étape"];
-  datasets.forEach(ds => {
-    headers.push(ds.label || "Valeur");
-  });
-  csvContent += headers.join(";") + "\n";
-  
-  // 4. Remplir les lignes de données
-  for (let i = 0; i < labels.length; i++) {
-    let row = [labels[i]];
-    datasets.forEach(ds => {
-      row.push(ds.data[i] !== undefined ? ds.data[i] : "");
+function exportAllPageData(filename) {
+    // 1. Récupérer tous les graphiques de la page
+    const charts = Chart.instances;
+    let csvContent = "data:text/csv;charset=utf-8,";
+    
+    // 2. Parcourir chaque graphique pour extraire ses données
+    Object.keys(charts).forEach((key, index) => {
+        const chart = charts[key];
+        const title = chart.canvas.id; // On utilise l'ID du canvas comme titre de section
+        
+        csvContent += "SECTION : " + title.toUpperCase() + "\n";
+        
+        const labels = chart.data.labels;
+        const datasets = chart.data.datasets;
+        
+        // En-têtes
+        let headers = ["Libellé"];
+        datasets.forEach(ds => headers.push(ds.label || "Valeur"));
+        csvContent += headers.join(";") + "\n";
+        
+        // Données
+        for (let i = 0; i < labels.length; i++) {
+            let row = [labels[i]];
+            datasets.forEach(ds => {
+                row.push(ds.data[i] !== undefined ? ds.data[i] : "");
+            });
+            csvContent += row.join(";") + "\n";
+        }
+        csvContent += "\n"; // Saut de ligne entre les graphiques
     });
-    csvContent += row.join(";") + "\n";
-  }
 
-  // 5. Créer un lien invisible pour déclencher le téléchargement
-  const encodedUri = encodeURI(csvContent);
-  const link = document.createElement("a");
-  link.setAttribute("href", encodedUri);
-  link.setAttribute("download", filename + ".csv");
-  
-  document.body.appendChild(link);
-  link.click(); // Simule le clic
-  document.body.removeChild(link); // Nettoie la page
+    // 3. Téléchargement
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", filename + ".csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 }
 </script>
 {% endblock %}
