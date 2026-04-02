@@ -1,3 +1,4 @@
+DROP DATABASE IF EXISTS `MES4_Analysis`;
 -- 1. Création de la base d'analyse
 CREATE DATABASE IF NOT EXISTS `MES4_Analysis`;
 USE `MES4_Analysis`;
