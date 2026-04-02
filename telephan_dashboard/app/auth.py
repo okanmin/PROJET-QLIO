@@ -119,7 +119,7 @@ def qualite_page():
                     "is_ok": is_ok
                 })
 
-        # --- B. Taux d'arrêt avec filtrage de la date (Utilisation de la VUE exacte) ---
+        # --- B. Taux d'arrêt avec filtrage de la date ---
         query_tp = text("""
             SELECT Taux_Arret_Panne_Pourcentage 
             FROM MES4_Analysis.V_Taux_Panne_Par_Jour 
@@ -130,10 +130,7 @@ def qualite_page():
         res_tp = db.session.execute(query_tp, {"date_choisie": selected_date}).fetchone()
         
         if res_tp and res_tp[0] is not None: 
-            # La donnée existe pour cette date
             taux_panne = float(res_tp[0])
-            
-            # Application des couleurs dynamiques
             if taux_panne >= 10: 
                 couleur_panne = "var(--bad)"
             elif taux_panne >= 5: 
@@ -141,7 +138,6 @@ def qualite_page():
             else:
                 couleur_panne = "var(--good)"
         else:
-            # Pas de production ou de pannes à cette date précise
             taux_panne = 0
             couleur_panne = "gray"
 
@@ -158,7 +154,6 @@ def qualite_page():
     except Exception as e:
         print(f"Erreur SQL Qualité : {e}")
 
-    # Envoi au HTML (On transmet la variable 'current_date')
     return render_template("qualite.html", 
                            user=session["user"], 
                            current_date=selected_date,
@@ -171,14 +166,97 @@ def qualite_page():
 @auth_bp.get("/performance")
 @login_required
 def performance_page():
-    return render_template("performance.html", user=session["user"])
+    """Page Performance : TRS, Rotation stock, Lead Time, Obstacles"""
+    
+    # Variables par défaut
+    valeur_trs = 0
+    rotation_stock = 0
+    nb_obstacles = 0
+    lead_time_data = None
+    trs_history_data = None
+
+    try:
+        # --- A. Calcul du TRS (Temps réel vs Temps planifié) ---
+        query_trs = text("""
+            SELECT 
+                SUM(TIMESTAMPDIFF(MINUTE, Start, End)) as TempsReel,
+                SUM(TIMESTAMPDIFF(MINUTE, PlannedStart, PlannedEnd)) as TempsPlanifie
+            FROM mes4.tblfinstep 
+            WHERE Start IS NOT NULL 
+              AND End IS NOT NULL 
+              AND PlannedStart IS NOT NULL 
+              AND PlannedEnd IS NOT NULL
+        """)
+        res_trs = db.session.execute(query_trs).fetchone()
+        if res_trs and res_trs[0] and res_trs[1] and res_trs[1] > 0:
+            calcul_trs = (float(res_trs[1]) / float(res_trs[0])) * 100
+            valeur_trs = round(min(calcul_trs, 100.0), 1)
+
+        # --- B. Calcul du Lead Time moyen par opération ---
+        query_lead_time = text("""
+            SELECT 
+                Description, 
+                AVG(TIMESTAMPDIFF(MINUTE, Start, End)) as DureeMoyenne
+            FROM mes4.tblfinstep
+            WHERE Start IS NOT NULL AND End IS NOT NULL AND Description IS NOT NULL
+            GROUP BY Description
+            ORDER BY DureeMoyenne DESC
+            LIMIT 5
+        """)
+        res_lt = db.session.execute(query_lead_time).fetchall()
+        if res_lt:
+            labels_lt = []
+            data_lt = []
+            for row in res_lt:
+                labels_lt.append((row[0][:15] + "..") if len(row[0]) > 15 else row[0])
+                data_lt.append(round(float(row[1]), 1))
+            
+            lead_time_data = {
+                "labels": labels_lt,
+                "datasets": [{
+                    "label": "Durée moyenne (Minutes)",
+                    "data": data_lt
+                }]
+            }
+
+        # --- C. Calcul de la Rotation de Stock ---
+        query_stock = text("""
+            SELECT COUNT(*) 
+            FROM mes4.tblbufferpos 
+            WHERE PNo > 0 AND Booked = 0
+        """)
+        stock_actuel = db.session.execute(query_stock).scalar()
+        if stock_actuel:
+            rotation_stock = round(stock_actuel / 10.0, 1)
+
+        # --- D. Nombre d'obstacles (Erreurs Machine) ---
+        query_obs = text("""
+            SELECT COUNT(*) 
+            FROM mes4.tblmachinereport 
+            WHERE ErrorL0 = 1 OR ErrorL1 = 1
+        """)
+        nb_obstacles = db.session.execute(query_obs).scalar() or 0
+
+    except Exception as e:
+        print(f"Erreur SQL Performance : {e}")
+
+    # Détermination de la couleur du TRS
+    couleur_trs = "var(--good)" if valeur_trs >= 70 else "var(--bad)"
+
+    return render_template("performance.html", 
+                           user=session["user"],
+                           valeur_trs=valeur_trs,
+                           couleur_trs=couleur_trs,
+                           rotation_stock=rotation_stock,
+                           nb_obstacles=nb_obstacles,
+                           trs_history_data=trs_history_data,
+                           lead_time_data=lead_time_data)
 
 @auth_bp.get("/robotino")
 @login_required
 def robotino_page():
     """Page Robotino : Batterie / cycles / disponibilité (à partir d'un CSV)."""
 
-    # Chemin attendu : app/static/data/robotino_data.csv
     csv_path = os.path.join(os.path.dirname(__file__), "static", "data", "robotino_data.csv")
 
     time_series = []

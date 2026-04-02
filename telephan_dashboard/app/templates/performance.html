@@ -1,8 +1,229 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2>Analyse des Performances</h2>
-    <p>Bienvenue sur le tableau de bord des performances et TRS.</p>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="page container">
+
+    <div class="card-title" style="margin-bottom: 20px;">
+        <h2 style="font-size: 20px;">Tableau de Bord Performance & Logistique</h2>
     </div>
+
+    <div class="grid-3" style="margin-bottom: 24px; gap: 20px;">
+        
+        <div class="card" style="text-align: center; border-bottom: 4px solid {{ couleur_trs }};">
+            <div class="card-title"><h2 style="justify-content: center;">Taux de Rendement Synthétique (TRS)</h2></div>
+            <div class="kpi" style="color: {{ couleur_trs }}; font-size: 3.5rem; font-weight: bold; margin: 10px 0;">
+                {{ valeur_trs }} %
+            </div>
+            <p style="color: #a0a0a0; margin-bottom: 15px;">
+                {% if valeur_trs >= 70 %}
+                    OPTIMAL : Objectif de 70% atteint
+                {% else %}
+                    ATTENTION : En dessous de l'objectif de 70%
+                {% endif %}
+            </p>
+            <div style="width: 100%; background: rgba(255,255,255,0.1); height: 12px; border-radius: 6px; overflow: hidden;">
+                <div style="width: {{ valeur_trs }}%; background: {{ couleur_trs }}; height: 100%; transition: width 0.8s ease-in-out;"></div>
+            </div>
+        </div>
+
+        <div class="card" style="text-align: center; border-bottom: 4px solid #00d4ff;">
+            <div class="card-title"><h2 style="justify-content: center;">Rotation de Stock</h2></div>
+            <div class="kpi" style="color: #00d4ff; font-size: 3.5rem; font-weight: bold; margin: 10px 0;">
+                {{ rotation_stock }} j
+            </div>
+            <p style="color: #a0a0a0; margin-bottom: 15px;">Temps d'écoulement moyen</p>
+        </div>
+
+        <div class="card" style="text-align: center; border-bottom: 4px solid {% if nb_obstacles == 0 %}#2ee59d{% else %}#ff4d6d{% endif %};">
+            <div class="card-title"><h2 style="justify-content: center;">Obstacles Robotino</h2></div>
+            <div class="kpi" style="color: {% if nb_obstacles == 0 %}#2ee59d{% else %}#ff4d6d{% endif %}; font-size: 3.5rem; font-weight: bold; margin: 10px 0;">
+                {{ nb_obstacles }}
+            </div>
+            <p style="color: #a0a0a0; margin-bottom: 15px;">Détections sur le parcours</p>
+        </div>
+
+    </div>
+
+    <div class="card" style="margin-bottom: 24px;">
+        <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+            <h2 style="margin: 0;">Évolution du TRS (Taux de Rendement Synthétique)</h2>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn icon-btn" data-fs="trs" title="Plein écran">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <div style="position: relative; height: 350px; width: 100%;">
+            <canvas id="trsChart"></canvas>
+        </div>
+    </div>
+
+    <div class="card" style="margin-bottom: 24px;">
+        <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+            <h2 style="margin: 0;">Lead Time (Jours par étape)</h2>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn icon-btn" data-fs="leadtime" title="Plein écran">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <div style="position: relative; height: 350px; width: 100%;">
+            <canvas id="leadTimeChart"></canvas>
+        </div>
+    </div>
+
+</div>
+
+<div id="fs-backdrop" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px); z-index:9998;"></div>
+<div id="fs-card" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); width:90vw; height:85vh; background:#1a1a1a; border:1px solid rgba(255,255,255,0.1); border-radius:24px; padding:25px; z-index:9999; box-shadow:0 20px 50px rgba(0,0,0,0.5);">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h2 id="fs-title" style="margin:0; color:white;">Analyse Détaillée</h2>
+        <button id="fs-close" class="btn" style="background:rgba(255,255,255,0.1); color:white; border:none; padding:8px 15px; border-radius:10px; cursor:pointer;">✖ Fermer</button>
+    </div>
+    <div style="position:relative; height:calc(100% - 60px); width:100%;">
+        <canvas id="fs-canvas"></canvas>
+    </div>
+</div>
+
+<script>
+    const colorWhite = '#ffffff';
+    const colorGood = '#2ee59d'; 
+    const colorBad = '#ff4d6d';  
+    const colorAccent = '#00d4ff'; 
+    const colorSecondary = '#f1c40f'; 
+
+    // --- RÉCUPÉRATION DES DONNÉES RÉELLES ---
+    // Si la donnée est nulle, on initialise une structure vide pour que Chart.js ne plante pas
+    const rawDataTRS = {{ trs_history_data | tojson | safe }};
+    const dataTRS = rawDataTRS || [];
+
+    const rawDataLeadTime = {{ lead_time_data | tojson | safe }};
+    const dataLeadTime = rawDataLeadTime || { "labels": [], "datasets": [] };
+
+    // --- INITIALISATION COURBE TRS ---
+    const trsChart = new Chart(document.getElementById('trsChart'), {
+        type: 'line',
+        data: {
+            labels: dataTRS.map(d => d.date),
+            datasets: [
+                {
+                    label: 'TRS (%)',
+                    data: dataTRS.map(d => d.val),
+                    borderColor: colorAccent,
+                    backgroundColor: colorAccent + '22',
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 3,
+                    pointRadius: 5
+                },
+                {
+                    label: 'Objectif (70%)',
+                    data: dataTRS.map(() => 70),
+                    type: 'line',
+                    borderColor: colorGood,
+                    borderDash: [10, 5],
+                    pointRadius: 0,
+                    borderWidth: 2
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { min: 0, max: 100, ticks: { color: colorWhite } },
+                x: { ticks: { color: colorWhite } }
+            },
+            plugins: {
+                legend: { labels: { color: colorWhite } }
+            }
+        }
+    });
+
+    // --- INITIALISATION HISTOGRAMME LEAD TIME ---
+    const leadTimeChart = new Chart(document.getElementById('leadTimeChart'), {
+        type: 'bar',
+        data: {
+            labels: dataLeadTime.labels,
+            datasets: dataLeadTime.datasets.map((ds, index) => {
+                const colors = [colorAccent, colorSecondary, '#9b59b6']; 
+                return {
+                    label: ds.label,
+                    data: ds.data,
+                    backgroundColor: colors[index % colors.length],
+                    borderRadius: 3
+                };
+            })
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { stacked: true, ticks: { color: colorWhite } },
+                y: { stacked: true, ticks: { color: colorWhite }, title: { display: true, text: 'Minutes (moyenne)', color: colorWhite } }
+            },
+            plugins: {
+                legend: { labels: { color: colorWhite } }
+            }
+        }
+    });
+
+    // --- LOGIQUE PLEIN ÉCRAN ---
+    const fsBackdrop = document.getElementById("fs-backdrop");
+    const fsCard = document.getElementById("fs-card");
+    const fsClose = document.getElementById("fs-close");
+    const fsCanvas = document.getElementById("fs-canvas");
+    const fsTitle = document.getElementById("fs-title");
+    let fsChart = null;
+
+    function openFs(chartKey) {
+        let sourceChart = null;
+        let titleText = "";
+
+        if (chartKey === 'trs') {
+            sourceChart = trsChart;
+            titleText = "Évolution Détaillée du TRS";
+        } else if (chartKey === 'leadtime') {
+            sourceChart = leadTimeChart;
+            titleText = "Analyse Détaillée du Lead Time";
+        }
+
+        if (sourceChart) {
+            fsTitle.innerText = titleText;
+            fsBackdrop.style.display = "block";
+            fsCard.style.display = "block";
+
+            if (fsChart) fsChart.destroy();
+            
+            fsChart = new Chart(fsCanvas, {
+                type: sourceChart.config.type,
+                data: JSON.parse(JSON.stringify(sourceChart.config.data)),
+                options: {
+                    ...sourceChart.config.options,
+                    maintainAspectRatio: false,
+                    responsive: true
+                }
+            });
+        }
+    }
+
+    function closeFs() {
+        if (fsChart) { fsChart.destroy(); fsChart = null; }
+        fsBackdrop.style.display = "none";
+        fsCard.style.display = "none";
+    }
+
+    document.querySelectorAll("[data-fs]").forEach(btn => {
+        btn.addEventListener("click", () => openFs(btn.getAttribute("data-fs")));
+    });
+
+    fsClose.addEventListener("click", closeFs);
+    fsBackdrop.addEventListener("click", closeFs);
+</script>
 {% endblock %}
