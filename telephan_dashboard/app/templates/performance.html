@@ -358,5 +358,48 @@ document.querySelectorAll('[data-fs]').forEach(btn => {
 });
 fsClose.addEventListener('click', closeFs);
 fsBackdrop.addEventListener('click', closeFs);
+
+// Fonction pour exporter les données d'un graphique Chart.js vers Excel (CSV)
+function exportChartData(canvasId, filename) {
+  // 1. Récupérer l'instance du graphique grâce à son ID
+  const chart = Chart.getChart(canvasId);
+  if (!chart) {
+    console.error("Graphique introuvable !");
+    return;
+  }
+
+  // 2. Préparer les données
+  const labels = chart.data.labels;
+  const datasets = chart.data.datasets;
+  
+  // Utilisation du point-virgule pour que l'Excel français sépare bien les colonnes
+  let csvContent = "data:text/csv;charset=utf-8,";
+  
+  // 3. Créer la ligne des en-têtes (ex: "Label; TRS (%); Objectif 70%")
+  let headers = ["Date / Étape"];
+  datasets.forEach(ds => {
+    headers.push(ds.label || "Valeur");
+  });
+  csvContent += headers.join(";") + "\n";
+  
+  // 4. Remplir les lignes de données
+  for (let i = 0; i < labels.length; i++) {
+    let row = [labels[i]];
+    datasets.forEach(ds => {
+      row.push(ds.data[i] !== undefined ? ds.data[i] : "");
+    });
+    csvContent += row.join(";") + "\n";
+  }
+
+  // 5. Créer un lien invisible pour déclencher le téléchargement
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", filename + ".csv");
+  
+  document.body.appendChild(link);
+  link.click(); // Simule le clic
+  document.body.removeChild(link); // Nettoie la page
+}
 </script>
 {% endblock %}
